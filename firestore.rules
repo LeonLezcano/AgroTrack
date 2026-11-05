@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isContractorAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'contractor_admin' ||
+        request.auth.token.role == 'manager'
+      );
+    }
+
+    function isOperator() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'operator' ||
+        isContractorAdmin()
+      );
+    }
+
+    function isFieldProducer(producerId) {
+      return isAuthenticated() && request.auth.token.producerId == producerId;
+    }
+
+    match /fields/{fieldId} {
+      allow read: if isAuthenticated();
+      allow write: if isContractorAdmin();
+    }
+
+    match /lots/{lotId} {
+      allow read: if isAuthenticated();
+      allow write: if isContractorAdmin();
+    }
+
+    match /machinery/{machineId} {
+      allow read: if isAuthenticated();
+      allow write: if isContractorAdmin();
+    }
+
+    match /labor_orders/{orderId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOperator();
+      allow delete: if false; // Inmutable agricultural work order
+    }
+
+    match /campaign_settlements/{settlementId} {
+      allow read: if isContractorAdmin() || (isAuthenticated() && isFieldProducer(resource.data.producerId));
+      allow write: if isContractorAdmin();
+    }
+  }
+}
