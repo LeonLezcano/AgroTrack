@@ -1,6 +1,6 @@
 {
   "name": "agrotrack",
-  "version": "1.0.00",
+  "version": "1.0.01",
   "description": "Plataforma Integral para Contratistas Rurales, Pulverización y Labores Agrícolas",
   "type": "module",
   "scripts": {
