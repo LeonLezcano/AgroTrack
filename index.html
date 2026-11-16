@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es" class="h-full bg-[#11160e] text-[#ecf2e6]">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AgroTrack v1.0.01 — Contratistas Rurales, Pulverización & Maquinaria Agrícola</title>
+  <title>AgroTrack v1.0.01 â€” Contratistas Rurales, PulverizaciÃ³n & Maquinaria AgrÃ­cola</title>
   <!-- Inline SVG Tractor Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2384cc16'><path d='M19 13h-1.27c-.44-1.74-2.01-3-3.73-3-.49 0-.96.09-1.39.26L11 8H5v8H4c-.55 0-1 .45-1 1s.45 1 1 1h1c0 1.66 1.34 3 3 3s3-1.34 3-3h2c0 2.21 1.79 4 4 4s4-1.79 4-4h1c.55 0 1-.45 1-1s-.45-1-1-1zm-12 5c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm7-7c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm4 7c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zM7 10h3v4H7v-4z'/></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -27,21 +27,21 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-lg bg-[#243319] border border-[#3b5228] flex items-center justify-center text-white text-xl">
-          🚜
+          ðŸšœ
         </div>
         <div>
           <div class="flex items-center gap-2">
             <span class="text-lg font-black tracking-tight text-[#f2f7ed]">AgroTrack</span>
             <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-[#243319] text-[#bef264] border border-[#3b5228] font-bold">v1.0.01</span>
           </div>
-          <p class="text-xs text-[#9eb38c]">Contratistas Rurales, Pulverización & Maquinaria Agrícola</p>
+          <p class="text-xs text-[#9eb38c]">Contratistas Rurales, PulverizaciÃ³n & Maquinaria AgrÃ­cola</p>
         </div>
       </div>
 
       <div class="flex items-center gap-2.5">
         <!-- Wake Lock Button (Directiva 9) -->
         <button id="wakeLockBtn" class="px-3.5 py-2 rounded-lg text-xs font-bold bg-[#202b18] hover:bg-[#28371e] text-[#d6e5c9] flex items-center gap-2 border border-[#334524]" title="Screen Wake Lock API">
-          <span>🌙</span> <span class="hidden sm:inline">Modo Cabina:</span> <span>OFF</span>
+          <span>ðŸŒ™</span> <span class="hidden sm:inline">Modo Cabina:</span> <span>OFF</span>
         </button>
 
         <!-- New Labor Button -->
@@ -55,22 +55,22 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-[#23301a] overflow-x-auto py-2 bg-[#141b10]">
       <nav class="flex space-x-1.5">
         <button data-tab="dashboard" class="px-3.5 py-2 rounded-lg text-xs font-bold bg-[#27381b] text-[#bef264] border border-[#3d562b] flex items-center gap-2">
-          <span>📊</span> <span>Panel General</span>
+          <span>ðŸ“Š</span> <span>Panel General</span>
         </button>
         <button data-tab="labors" class="px-3.5 py-2 rounded-lg text-xs font-medium bg-[#182113] hover:bg-[#222e1b] text-[#a1b790] hover:text-[#f2f7ed] border border-[#27361d] flex items-center gap-2">
-          <span>🚜</span> <span>Órdenes & ePOD</span>
+          <span>ðŸšœ</span> <span>Ã“rdenes & ePOD</span>
         </button>
         <button data-tab="weather-deltat" class="px-3.5 py-2 rounded-lg text-xs font-medium bg-[#182113] hover:bg-[#222e1b] text-[#a1b790] hover:text-[#f2f7ed] border border-[#27361d] flex items-center gap-2">
-          <span>🌦️</span> <span>Clima & Delta T</span>
+          <span>ðŸŒ¦ï¸</span> <span>Clima & Delta T</span>
         </button>
         <button data-tab="lots" class="px-3.5 py-2 rounded-lg text-xs font-medium bg-[#182113] hover:bg-[#222e1b] text-[#a1b790] hover:text-[#f2f7ed] border border-[#27361d] flex items-center gap-2">
-          <span>🌱</span> <span>Campos & Lotes</span>
+          <span>ðŸŒ±</span> <span>Campos & Lotes</span>
         </button>
         <button data-tab="machinery" class="px-3.5 py-2 rounded-lg text-xs font-medium bg-[#182113] hover:bg-[#222e1b] text-[#a1b790] hover:text-[#f2f7ed] border border-[#27361d] flex items-center gap-2">
-          <span>⚙️</span> <span>Flota & Gasoil</span>
+          <span>âš™ï¸</span> <span>Flota & Gasoil</span>
         </button>
         <button data-tab="settlement" class="px-3.5 py-2 rounded-lg text-xs font-medium bg-[#182113] hover:bg-[#222e1b] text-[#a1b790] hover:text-[#f2f7ed] border border-[#27361d] flex items-center gap-2">
-          <span>💰</span> <span>Liquidación Campaña</span>
+          <span>ðŸ’°</span> <span>LiquidaciÃ³n CampaÃ±a</span>
         </button>
       </nav>
     </div>
@@ -96,9 +96,17 @@
 
   <!-- Footer -->
   <footer class="bg-[#0e130b] border-t border-[#1c2616] py-4 text-center text-xs text-[#80976f] no-print">
-    AgroTrack v1.0.01 · Trazabilidad Agronómica · Sello Criptográfico SHA-256 · Cero Disputas de Hectáreas · AiAppFactory
+    AgroTrack v1.0.01 Â· Trazabilidad AgronÃ³mica Â· Sello CriptogrÃ¡fico SHA-256 Â· Cero Disputas de HectÃ¡reas Â· AiAppFactory
   </footer>
 
   <script type="module" src="./src/main.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>
+
