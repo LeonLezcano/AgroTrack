@@ -1,7 +1,7 @@
 /**
  * AgroTrack - Main SPA Controller
- * Contratistas Rurales, Pulverización Agrícola & Agro-Servicios
- * AppSec Zero-Trust & Screen Wake Lock API Compliant
+ * Contratistas Rurales, Pulverización Agrícola y Agro-Servicios
+ * AppSec Zero-Trust, Offline-First Cache & Screen Wake Lock API Compliant
  */
 
 import { FieldRegistry } from './core/fieldRegistry.js';
@@ -13,7 +13,28 @@ import { CampaignSettlementService } from './services/campaignSettlementService.
 import { WhatsAppAgroNotifier } from './services/whatsAppAgroNotifier.service.js';
 import { AgroTrackCache } from './services/agroTrackCache.service.js';
 import { Sanitizer } from './utils/sanitizer.js';
-import { formatARS, formatUSD, formatHectares, formatLitersPerHa, formatDate, formatDateTime, evaluateDeltaTSafety } from './utils/formatters.js';
+import {
+  formatARS,
+  formatUSD,
+  formatHectares,
+  formatLitersPerHa,
+  formatDate,
+  formatDateTime,
+  evaluateDeltaTSafety
+} from './utils/formatters.js';
+
+const ICONS = {
+  sun: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
+  moon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
+  plus: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
+  shieldCheck: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>',
+  cloudSun: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 shrink-0" aria-hidden="true"><path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/></svg>',
+  tractor: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 shrink-0" aria-hidden="true"><path d="m10 11 11 .9c.6 0 .9.5.8 1.1l-.8 5h-1"/><path d="M16 18h-5"/><path d="M18 5a1 1 0 0 0-1 1v5.573"/><path d="M3 4h9l1 7.246"/><path d="M4 11V4"/><path d="M7 15h.01"/><path d="M8 10.1V4"/><circle cx="18" cy="18" r="2"/><circle cx="7" cy="15" r="5"/></svg>',
+  pen: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0" aria-hidden="true"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></svg>',
+  share: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>',
+  download: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>',
+  trash: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 shrink-0" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>'
+};
 
 export class AgroTrackApp {
   constructor() {
@@ -26,21 +47,69 @@ export class AgroTrackApp {
     this.currentTab = 'dashboard';
     this.wakeLock = null;
     this.activeCertifyingOrderId = null;
+    this.signaturePads = {};
 
     this.init();
   }
 
   init() {
-    this.seedDemoDataIfAllowed();
+    const restored = this.loadPersistedState();
+    if (!restored) {
+      this.seedDemoDataIfAllowed();
+      this.persistState();
+    }
     this.bindEvents();
     this.setupWakeLock();
     this.render();
   }
 
+  loadPersistedState() {
+    const saved = this.cache.loadState();
+    if (!saved || typeof saved !== 'object') return false;
+
+    try {
+      this.fieldRegistry.producers.clear();
+      this.fieldRegistry.lots.clear();
+      this.machineryCatalog.machinery.clear();
+      this.laborService.orders.clear();
+      this.settlementService.settlements.clear();
+
+      (saved.producers || []).forEach(p => this.fieldRegistry.producers.set(p.id, p));
+      (saved.lots || []).forEach(l => this.fieldRegistry.lots.set(l.id, l));
+      (saved.machinery || []).forEach(m => this.machineryCatalog.machinery.set(m.id, m));
+      (saved.orders || []).forEach(o => this.laborService.orders.set(o.id, o));
+      (saved.settlements || []).forEach(s => this.settlementService.settlements.set(s.id, s));
+      return true;
+    } catch (err) {
+      console.warn('Restauración de caché local omitida:', err);
+      return false;
+    }
+  }
+
+  persistState() {
+    this.cache.saveState({
+      producers: this.fieldRegistry.listProducers(),
+      lots: this.fieldRegistry.listLots(),
+      machinery: this.machineryCatalog.listMachinery(),
+      orders: this.laborService.listLaborOrders(),
+      settlements: this.settlementService.listSettlements()
+    });
+  }
+
+  hasDemoRecords() {
+    const lots = this.fieldRegistry.listLots();
+    const orders = this.laborService.listLaborOrders();
+    const machines = this.machineryCatalog.listMachinery();
+    return (
+      lots.some(l => l.isDemo) ||
+      orders.some(o => o.isDemo) ||
+      machines.some(m => m.isDemo)
+    );
+  }
+
   seedDemoDataIfAllowed() {
     if (this.cache.isPurged()) return;
 
-    // 1. Seed Producer
     const prod1 = this.fieldRegistry.registerProducer({
       id: 'PROD-LITORAL',
       name: 'Agropecuaria del Litoral S.A.',
@@ -48,6 +117,7 @@ export class AgroTrackApp {
       contactPhone: '+5491144556677',
       location: 'Pergamino / Rojas, Buenos Aires'
     });
+    prod1.isDemo = true;
 
     const prod2 = this.fieldRegistry.registerProducer({
       id: 'PROD-PAMPA',
@@ -56,8 +126,8 @@ export class AgroTrackApp {
       contactPhone: '+5491166778899',
       location: 'Venado Tuerto, Santa Fe'
     });
+    prod2.isDemo = true;
 
-    // 2. Seed Agricultural Lots
     const l1 = this.fieldRegistry.registerLot({
       id: 'LOT-101',
       producerId: prod1.id,
@@ -71,6 +141,7 @@ export class AgroTrackApp {
       coordinates: { lat: -34.1502, lng: -60.4201 },
       bufferZoneMeters: 500
     });
+    l1.isDemo = true;
 
     const l2 = this.fieldRegistry.registerLot({
       id: 'LOT-102',
@@ -85,6 +156,7 @@ export class AgroTrackApp {
       coordinates: { lat: -34.1580, lng: -60.4350 },
       bufferZoneMeters: 200
     });
+    l2.isDemo = true;
 
     const l3 = this.fieldRegistry.registerLot({
       id: 'LOT-103',
@@ -99,8 +171,8 @@ export class AgroTrackApp {
       coordinates: { lat: -33.7400, lng: -61.9600 },
       bufferZoneMeters: 1000
     });
+    l3.isDemo = true;
 
-    // 3. Seed Machinery Fleet
     const m1 = this.machineryCatalog.registerMachine({
       id: 'MAQ-201',
       name: 'Pla MAP 3 3600 H',
@@ -113,6 +185,7 @@ export class AgroTrackApp {
       engineHours: 1420,
       assignedOperator: 'Darío Fernández'
     });
+    m1.isDemo = true;
 
     const m2 = this.machineryCatalog.registerMachine({
       id: 'MAQ-202',
@@ -126,6 +199,7 @@ export class AgroTrackApp {
       engineHours: 240,
       assignedOperator: 'Piloto Lucas Varela'
     });
+    m2.isDemo = true;
 
     const m3 = this.machineryCatalog.registerMachine({
       id: 'MAQ-203',
@@ -139,8 +213,8 @@ export class AgroTrackApp {
       engineHours: 890,
       assignedOperator: 'Marcos Benítez'
     });
+    m3.isDemo = true;
 
-    // 4. Seed Completed Labor Order with Double Signature ePOD
     const o1 = this.laborService.createLaborOrder({
       lotId: l1.id,
       machineId: m1.id,
@@ -151,8 +225,8 @@ export class AgroTrackApp {
       recipeAgronomicNumber: 'REC-AGRO-77491-BA',
       fuelProvidedBy: 'contractor'
     });
+    o1.isDemo = true;
 
-    // Record weather check
     this.laborService.recordWeatherCheck(o1.id, {
       temperatureC: 23.5,
       relativeHumidityPct: 62,
@@ -160,17 +234,41 @@ export class AgroTrackApp {
       windDirectionName: 'SE'
     });
 
-    // Complete order
     this.laborService.completeLaborOrder({
       orderId: o1.id,
       hectaresApplied: 132.5,
-      operatorSignature: 'data:image/svg+xml;utf8,<svg><path d="M10,10 L80,40 L160,20"/></svg>',
-      producerSignature: 'data:image/svg+xml;utf8,<svg><path d="M5,15 L90,55 L180,30"/></svg>',
+      operatorSignature: 'DEMO-SEAL-OP-DARÍO-FERNÁNDEZ-SHA256-VERIFIED',
+      producerSignature: 'DEMO-SEAL-PROD-MARTÍN-ECHEVERRÍA-SHA256-VERIFIED',
       signerName: 'Ing. Agr. Martín Echeverría',
       signerRole: 'Responsable Técnico La Juanita',
       fuelUsedLiters: 238.5,
-      notes: 'Aplicación de fungicida y coadyuvante con boquillas antideriva TTJ60. Excelente cobertura sin deriva.'
+      notes: 'Registro demostrativo inicial: aplicación con boquillas antideriva TTJ60.'
     });
+  }
+
+  handlePurgeDemoData() {
+    this.cache.clear();
+    this.fieldRegistry.producers.clear();
+    this.fieldRegistry.lots.clear();
+    this.machineryCatalog.machinery.clear();
+    this.laborService.orders.clear();
+    this.settlementService.settlements.clear();
+    this.persistState();
+    this.showToast('Datos de demostración purgados. Entorno limpio listo para operación.', 'info');
+    this.render();
+  }
+
+  handleRestoreDemoData() {
+    this.cache.setPurgeFlag(false);
+    this.fieldRegistry.producers.clear();
+    this.fieldRegistry.lots.clear();
+    this.machineryCatalog.machinery.clear();
+    this.laborService.orders.clear();
+    this.settlementService.settlements.clear();
+    this.seedDemoDataIfAllowed();
+    this.persistState();
+    this.showToast('Datos de demostración restaurados correctamente.', 'success');
+    this.render();
   }
 
   setupWakeLock() {
@@ -189,7 +287,7 @@ export class AgroTrackApp {
 
   async toggleWakeLock() {
     if (!('wakeLock' in navigator)) {
-      this.showToast('Wake Lock no soportado en este dispositivo', 'warning');
+      this.showToast('Wake Lock no soportado en este navegador. Mantenga la pantalla activa desde ajustes.', 'warning');
       return;
     }
 
@@ -208,7 +306,7 @@ export class AgroTrackApp {
       }
       this.updateWakeLockButton();
     } catch (e) {
-      this.showToast(`Error de sensor WakeLock: ${e.message}`, 'warning');
+      this.showToast(`Aviso de sensor WakeLock: ${e.message}`, 'warning');
     }
   }
 
@@ -216,11 +314,11 @@ export class AgroTrackApp {
     const btn = document.getElementById('wakeLockBtn');
     if (!btn) return;
     if (this.wakeLock) {
-      btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#65a30d] text-white flex items-center gap-1.5 shadow-md';
-      btn.textContent = '☀️ Modo Cabina: ON';
+      btn.className = 'px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-bold bg-[#84cc16] text-[#0f1709] flex items-center gap-2 border border-[#a3e635] whitespace-nowrap shrink-0';
+      Sanitizer.safeSetInnerHTML(btn, `${ICONS.sun}<span>Modo Cabina: ON</span>`);
     } else {
-      btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-[#d6e5c9] flex items-center gap-1.5 border border-[#384e29]';
-      btn.textContent = '🌙 Modo Cabina: OFF';
+      btn.className = 'px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-semibold bg-[#202b18] hover:bg-[#29381e] text-[#c8dab8] flex items-center gap-2 border border-[#3b5228] whitespace-nowrap shrink-0';
+      Sanitizer.safeSetInnerHTML(btn, `${ICONS.moon}<span>Modo Cabina: OFF</span>`);
     }
   }
 
@@ -229,25 +327,31 @@ export class AgroTrackApp {
     if (!container) return;
 
     const toast = document.createElement('div');
-    const colors = {
-      success: 'bg-[#65a30d] text-white',
-      error: 'bg-rose-600 text-white',
-      warning: 'bg-amber-600 text-white',
-      info: 'bg-indigo-600 text-white'
+    const styles = {
+      success: 'bg-[#84cc16] text-[#0f1709] border border-[#a3e635]',
+      error: 'bg-[#4c0519] text-[#fecdd3] border border-[#be123c]',
+      warning: 'bg-[#451a03] text-[#fde68a] border border-[#b45309]',
+      info: 'bg-[#1d2817] text-[#f2f7ed] border border-[#3b5228]'
     };
 
-    toast.className = `p-3 rounded-xl shadow-xl text-sm font-medium flex items-center gap-2 transform transition-all duration-300 translate-y-2 ${colors[type] || colors.info}`;
+    toast.className = `p-3.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all duration-200 pointer-events-auto ${styles[type] || styles.info}`;
     toast.textContent = message;
 
     container.appendChild(toast);
     setTimeout(() => {
-      toast.classList.add('opacity-0', 'translate-x-full');
-      setTimeout(() => toast.remove(), 300);
+      toast.classList.add('opacity-0');
+      setTimeout(() => toast.remove(), 220);
     }, 4000);
   }
 
   bindEvents() {
     document.addEventListener('click', (e) => {
+      const modal = document.getElementById('mainModal');
+      if (modal && !modal.classList.contains('hidden') && e.target === modal) {
+        this.closeModal();
+        return;
+      }
+
       const tabTarget = e.target.closest('[data-tab]');
       if (tabTarget) {
         const tab = tabTarget.getAttribute('data-tab');
@@ -262,6 +366,32 @@ export class AgroTrackApp {
       }
     });
 
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('mainModal');
+        if (modal && !modal.classList.contains('hidden')) {
+          this.closeModal();
+        }
+      }
+    });
+
+    document.addEventListener('submit', (e) => {
+      const form = e.target;
+      if (!form || !form.id) return;
+
+      if (form.id === 'newOrderForm') {
+        e.preventDefault();
+        this.handleCreateLaborOrder();
+      } else if (form.id === 'certifyOrderForm') {
+        e.preventDefault();
+        const orderId = form.getAttribute('data-order-id');
+        this.handleConfirmCertification(orderId);
+      } else if (form.id === 'newLotForm') {
+        e.preventDefault();
+        this.handleRegisterLot();
+      }
+    });
+
     const wakeBtn = document.getElementById('wakeLockBtn');
     if (wakeBtn) {
       wakeBtn.addEventListener('click', () => this.toggleWakeLock());
@@ -270,11 +400,13 @@ export class AgroTrackApp {
 
   switchTab(tab) {
     this.currentTab = tab;
-    document.querySelectorAll('[data-tab]').forEach(el => {
-      if (el.getAttribute('data-tab') === tab) {
-        el.className = 'px-4 py-2 rounded-xl text-sm font-semibold bg-[#65a30d] text-white shadow-lg shadow-none flex items-center gap-2';
+    document.querySelectorAll('header nav [data-tab]').forEach(el => {
+      const isSelected = el.getAttribute('data-tab') === tab;
+      el.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      if (isSelected) {
+        el.className = 'px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-bold bg-[#84cc16] text-[#0f1709] flex items-center gap-2 whitespace-nowrap shrink-0';
       } else {
-        el.className = 'px-4 py-2 rounded-xl text-sm font-semibold bg-[#182113]/60 hover:bg-slate-800 text-[#9eb38c] hover:text-slate-200 border border-[#2c3d20] flex items-center gap-2 transition-colors';
+        el.className = 'px-3.5 py-2 min-h-[44px] rounded-lg text-xs font-semibold bg-[#182113] hover:bg-[#222e1b] text-[#c8dab8] hover:text-[#f2f7ed] border border-[#2c3d20] flex items-center gap-2 whitespace-nowrap shrink-0';
       }
     });
     this.render();
@@ -293,6 +425,12 @@ export class AgroTrackApp {
     } else if (action === 'confirm-labor-certification') {
       const orderId = target.getAttribute('data-id');
       this.handleConfirmCertification(orderId);
+    } else if (action === 'clear-sig-canvas') {
+      const padKey = target.getAttribute('data-pad');
+      this.clearSignaturePad(padKey);
+    } else if (action === 'trace-sig-canvas') {
+      const padKey = target.getAttribute('data-pad');
+      this.traceAssistedSignature(padKey);
     } else if (action === 'open-lot-modal') {
       this.openLotModal();
     } else if (action === 'register-lot') {
@@ -304,12 +442,141 @@ export class AgroTrackApp {
     } else if (action === 'export-settlement-csv') {
       const id = target.getAttribute('data-id');
       this.handleExportSettlementCsv(id);
+    } else if (action === 'purge-demo-data') {
+      this.handlePurgeDemoData();
+    } else if (action === 'restore-demo-data') {
+      this.handleRestoreDemoData();
     }
   }
 
   closeModal() {
     const modal = document.getElementById('mainModal');
     if (modal) modal.classList.add('hidden');
+  }
+
+  renderDemoBadge(isDemo) {
+    if (!isDemo) return '';
+    return '<span class="px-2 py-0.5 rounded text-xs font-bold bg-[#2e2611] text-[#fde68a] border border-[#856404]">[DEMO]</span>';
+  }
+
+  // --- SIGNATURE PAD ENGINE (HTML5 CANVAS) ---
+
+  initSignaturePad(canvasId, padKey, strokeColor = '#bef264') {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext ? canvas.getContext('2d') : null;
+    const state = {
+      canvas,
+      ctx,
+      drawing: false,
+      points: [],
+      strokeColor
+    };
+    this.signaturePads[padKey] = state;
+
+    if (ctx) {
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 2.4;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
+
+    const getCoords = (ev) => {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+      const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
+      const scaleX = canvas.width / (rect.width || canvas.width);
+      const scaleY = canvas.height / (rect.height || canvas.height);
+      return {
+        x: Math.round((clientX - rect.left) * scaleX * 10) / 10,
+        y: Math.round((clientY - rect.top) * scaleY * 10) / 10
+      };
+    };
+
+    const startDraw = (ev) => {
+      ev.preventDefault();
+      state.drawing = true;
+      const pt = getCoords(ev);
+      state.points.push({ x: pt.x, y: pt.y, move: true });
+      if (ctx) {
+        ctx.beginPath();
+        ctx.moveTo(pt.x, pt.y);
+      }
+    };
+
+    const moveDraw = (ev) => {
+      if (!state.drawing) return;
+      ev.preventDefault();
+      const pt = getCoords(ev);
+      state.points.push({ x: pt.x, y: pt.y, move: false });
+      if (ctx) {
+        ctx.lineTo(pt.x, pt.y);
+        ctx.stroke();
+      }
+    };
+
+    const endDraw = () => {
+      state.drawing = false;
+    };
+
+    canvas.addEventListener('pointerdown', startDraw);
+    canvas.addEventListener('pointermove', moveDraw);
+    canvas.addEventListener('pointerup', endDraw);
+    canvas.addEventListener('pointerleave', endDraw);
+  }
+
+  clearSignaturePad(padKey) {
+    const pad = this.signaturePads[padKey];
+    if (!pad) return;
+    pad.points = [];
+    if (pad.ctx && pad.canvas) {
+      pad.ctx.clearRect(0, 0, pad.canvas.width, pad.canvas.height);
+    }
+  }
+
+  traceAssistedSignature(padKey) {
+    const pad = this.signaturePads[padKey];
+    if (!pad) return;
+    this.clearSignaturePad(padKey);
+
+    const samplePoints = padKey === 'operator'
+      ? [
+          { x: 18, y: 58, move: true },
+          { x: 54, y: 24, move: false },
+          { x: 88, y: 62, move: false },
+          { x: 132, y: 30, move: false },
+          { x: 182, y: 52, move: false },
+          { x: 238, y: 36, move: false }
+        ]
+      : [
+          { x: 22, y: 62, move: true },
+          { x: 64, y: 28, move: false },
+          { x: 108, y: 56, move: false },
+          { x: 156, y: 22, move: false },
+          { x: 204, y: 54, move: false },
+          { x: 248, y: 40, move: false }
+        ];
+
+    pad.points = [...samplePoints];
+    if (pad.ctx) {
+      pad.ctx.beginPath();
+      samplePoints.forEach(pt => {
+        if (pt.move) pad.ctx.moveTo(pt.x, pt.y);
+        else pad.ctx.lineTo(pt.x, pt.y);
+      });
+      pad.ctx.stroke();
+    }
+  }
+
+  serializeSignaturePad(padKey) {
+    const pad = this.signaturePads[padKey];
+    if (!pad || pad.points.length < 2) return null;
+
+    const d = pad.points
+      .map(pt => `${pt.move ? 'M' : 'L'}${pt.x},${pt.y}`)
+      .join(' ');
+    return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 84"><path d="${d}" fill="none" stroke="${pad.strokeColor}" stroke-width="2"/></svg>`;
   }
 
   // --- ORDER MODALS & WORKFLOWS ---
@@ -319,38 +586,53 @@ export class AgroTrackApp {
     const title = document.getElementById('modalTitle');
     const body = document.getElementById('modalBody');
 
-    title.textContent = '🚜 Generar Nueva Orden de Labor Agrícola';
+    title.textContent = 'Generar Nueva Orden de Labor Agrícola';
 
     const lots = this.fieldRegistry.listLots({ status: 'active' });
-    const lotOptions = lots.map(l =>
-      `<option value="${l.id}">${Sanitizer.escapeHTML(l.lotName)} (${formatHectares(l.hectaresNet)}) - ${Sanitizer.escapeHTML(l.establishmentName)} [${Sanitizer.escapeHTML(l.producerName)}]</option>`
-    ).join('');
-
     const machines = this.machineryCatalog.listMachinery({ status: 'available' });
-    const machineOptions = machines.map(m =>
-      `<option value="${m.id}">${Sanitizer.escapeHTML(m.name)} - ${Sanitizer.escapeHTML(m.type)} (${m.boomWidthMeters}m)</option>`
-    ).join('');
+    const canCreate = lots.length > 0 && machines.length > 0;
+
+    const lotOptions = lots.length > 0
+      ? lots.map(l =>
+          `<option value="${l.id}">${Sanitizer.escapeHTML(l.lotName)} (${formatHectares(l.hectaresNet)}) - ${Sanitizer.escapeHTML(l.establishmentName)} [${Sanitizer.escapeHTML(l.producerName)}]</option>`
+        ).join('')
+      : '<option value="">Sin lotes activos registrados</option>';
+
+    const machineOptions = machines.length > 0
+      ? machines.map(m =>
+          `<option value="${m.id}">${Sanitizer.escapeHTML(m.name)} - ${Sanitizer.escapeHTML(m.type)} (${m.boomWidthMeters}m)</option>`
+        ).join('')
+      : '<option value="">Sin maquinaria disponible en flota</option>';
 
     const html = `
-      <form id="newOrderForm" class="space-y-3">
+      <form id="newOrderForm" class="space-y-4">
+        ${!canCreate ? `
+          <div class="p-3 rounded-lg bg-[#451a03] border border-[#b45309] text-xs text-[#fde68a] flex flex-wrap items-center justify-between gap-2">
+            <span>Para crear una orden necesita al menos un lote activo y una máquina en flota.</span>
+            <button type="button" data-action="restore-demo-data" class="px-3 py-1.5 min-h-[44px] rounded-lg bg-[#84cc16] text-[#0f1709] font-bold text-xs">
+              Cargar Flota y Lotes Demo
+            </button>
+          </div>
+        ` : ''}
+
         <div>
-          <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Lote y Establecimiento</label>
-          <select id="nordLotSelect" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200">
+          <label for="nordLotSelect" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Lote y Establecimiento</label>
+          <select id="nordLotSelect" ${!lots.length ? 'disabled' : ''} required class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]">
             ${lotOptions}
           </select>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Maquinaria Asignada</label>
-          <select id="nordMachineSelect" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200">
+          <label for="nordMachineSelect" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Maquinaria Asignada</label>
+          <select id="nordMachineSelect" ${!machines.length ? 'disabled' : ''} required class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]">
             ${machineOptions}
           </select>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Tipo de Labor</label>
-            <select id="nordLaborType" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200">
+            <label for="nordLaborType" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Tipo de Labor</label>
+            <select id="nordLaborType" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]">
               <option value="Pulverización Terrestre">Pulverización Terrestre (Barbecho / Fitosanitarios)</option>
               <option value="Pulverización con Dron">Pulverización con Dron Agrícola (Bajo Volumen)</option>
               <option value="Siembra Directa">Siembra Directa Air-Drill</option>
@@ -359,33 +641,33 @@ export class AgroTrackApp {
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Tarifa Pactada (USD/ha)</label>
-            <input type="number" step="0.5" id="nordRateUSD" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200 font-bold" value="11.5" required />
+            <label for="nordRateUSD" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Tarifa Pactada (USD/ha)</label>
+            <input type="number" step="0.5" min="0.5" id="nordRateUSD" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed] font-bold tabular-nums" value="11.5" required />
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Maquinista / Piloto</label>
-            <input type="text" id="nordOperatorName" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200" value="Darío Fernández" required />
+            <label for="nordOperatorName" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Maquinista / Piloto</label>
+            <input type="text" id="nordOperatorName" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]" value="Darío Fernández" required />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">N° Receta Agronómica Digital</label>
-            <input type="text" id="nordRecipeNum" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200" value="REC-AGRO-77492-BA" />
+            <label for="nordRecipeNum" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">N° Receta Agronómica Digital</label>
+            <input type="text" id="nordRecipeNum" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed] font-mono" value="REC-AGRO-77492-BA" required />
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Provisión de Gasoil</label>
-          <select id="nordFuelBy" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200">
+          <label for="nordFuelBy" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Provisión de Gasoil</label>
+          <select id="nordFuelBy" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]">
             <option value="contractor">Gasoil a cargo del Contratista</option>
             <option value="producer">Gasoil provisto por el Productor (a descontar)</option>
           </select>
         </div>
 
-        <div class="flex justify-end gap-3 pt-3 border-t border-[#2c3d20]">
-          <button type="button" data-action="close-modal" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-[#d6e5c9] hover:bg-slate-700">Cancelar</button>
-          <button type="button" data-action="create-labor-order" class="px-4 py-2 rounded-xl text-xs font-semibold bg-[#65a30d] hover:bg-[#4d7c0f] text-white shadow-lg shadow-none">Generar Orden de Labor</button>
+        <div class="flex flex-wrap justify-end gap-3 pt-3 border-t border-[#29381e]">
+          <button type="button" data-action="close-modal" class="px-4 py-2 min-h-[44px] rounded-lg text-xs font-semibold bg-[#202b18] text-[#c8dab8] hover:bg-[#29381e] border border-[#3b5228]">Cancelar</button>
+          <button type="submit" ${!canCreate ? 'disabled' : ''} class="px-4 py-2 min-h-[44px] rounded-lg text-xs font-bold bg-[#84cc16] hover:bg-[#a3e635] text-[#0f1709] disabled:opacity-50">Generar Orden de Labor</button>
         </div>
       </form>
     `;
@@ -419,8 +701,9 @@ export class AgroTrackApp {
         fuelProvidedBy
       });
 
+      this.persistState();
       this.closeModal();
-      this.showToast(`Orden ${order.id} creada para Lote ${order.lotName}`, 'success');
+      this.showToast(`Orden ${order.id} creada para ${order.lotName}`, 'success');
       this.render();
     } catch (e) {
       this.showToast(e.message, 'error');
@@ -435,57 +718,86 @@ export class AgroTrackApp {
     const title = document.getElementById('modalTitle');
     const body = document.getElementById('modalBody');
 
-    title.textContent = `📋 Certificación Digital de Labor (Orden ${order.id})`;
+    title.textContent = `Certificación Digital de Labor (${order.id})`;
 
     const html = `
-      <div class="space-y-4">
-        <div class="bg-[#182113] p-3.5 rounded-xl border border-[#2c3d20] text-xs space-y-1.5">
-          <div class="flex justify-between"><strong class="text-[#d6e5c9]">Lote:</strong> <span>${Sanitizer.escapeHTML(order.lotName)} (${Sanitizer.escapeHTML(order.establishmentName)})</span></div>
-          <div class="flex justify-between"><strong class="text-[#d6e5c9]">Productor:</strong> <span>${Sanitizer.escapeHTML(order.producerName)}</span></div>
-          <div class="flex justify-between"><strong class="text-[#d6e5c9]">Labor / Máquina:</strong> <span>${Sanitizer.escapeHTML(order.laborType)} · ${Sanitizer.escapeHTML(order.machineName)}</span></div>
-          <div class="flex justify-between"><strong class="text-[#d6e5c9]">Superficie Estimada Lote:</strong> <span class="font-bold text-white">${formatHectares(order.targetHectares)}</span></div>
+      <form id="certifyOrderForm" data-order-id="${order.id}" class="space-y-4">
+        <div class="pb-3 border-b border-[#29381e] text-xs space-y-1.5">
+          <div class="flex justify-between gap-2"><strong class="text-[#9eb38c]">Lote:</strong> <span class="text-[#f2f7ed] font-medium">${Sanitizer.escapeHTML(order.lotName)} (${Sanitizer.escapeHTML(order.establishmentName)})</span></div>
+          <div class="flex justify-between gap-2"><strong class="text-[#9eb38c]">Productor:</strong> <span class="text-[#f2f7ed]">${Sanitizer.escapeHTML(order.producerName)}</span></div>
+          <div class="flex justify-between gap-2"><strong class="text-[#9eb38c]">Labor y Máquina:</strong> <span class="text-[#c8dab8]">${Sanitizer.escapeHTML(order.laborType)} | ${Sanitizer.escapeHTML(order.machineName)}</span></div>
+          <div class="flex justify-between gap-2"><strong class="text-[#9eb38c]">Superficie Neta Lote:</strong> <span class="font-bold text-[#bef264] tabular-nums">${formatHectares(order.targetHectares)}</span></div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Hectáreas Reales Aplicadas</label>
-            <input type="number" step="0.1" id="certHectaresApplied" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-white font-bold" value="${order.targetHectares}" required />
+            <label for="certHectaresApplied" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Hectáreas Reales Aplicadas</label>
+            <input type="number" step="0.1" min="0.1" id="certHectaresApplied" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed] font-bold tabular-nums" value="${order.targetHectares}" required />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Gasoil Consumido (Litros)</label>
-            <input type="number" id="certFuelUsed" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200" value="230" />
+            <label for="certFuelUsed" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Gasoil Consumido (Litros)</label>
+            <input type="number" step="0.5" min="0" id="certFuelUsed" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed] tabular-nums" value="230" required />
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Firmante por el Productor</label>
-            <input type="text" id="certSignerName" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-xs text-slate-200" value="Ing. Agr. Martín Echeverría" />
+            <label for="certSignerName" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Firmante por el Productor</label>
+            <input type="text" id="certSignerName" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]" value="Ing. Agr. Martín Echeverría" required />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Cargo / Rol</label>
-            <input type="text" id="certSignerRole" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-xs text-slate-200" value="Encargado de Campo / Asesor Técnico" />
+            <label for="certSignerRole" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Cargo o Rol Técnico</label>
+            <input type="text" id="certSignerRole" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]" value="Encargado de Campo / Asesor Técnico" required />
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Observaciones Agronómicas</label>
-          <input type="text" id="certNotes" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-xs text-slate-200" value="Labor ejecutada en horario matutino con óptimo Delta T. Sin deriva hacia bordura oeste." />
+          <label for="certNotes" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Observaciones Agronómicas</label>
+          <input type="text" id="certNotes" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]" value="Labor ejecutada en ventana óptima de Delta T sin deriva." />
         </div>
 
-        <div class="bg-indigo-950/40 border border-indigo-800/60 p-3 rounded-xl text-[11px] text-indigo-200">
-          ✍️ <strong>Doble Firma Digital ePOD:</strong> Al confirmar, se estampará la firma digital del maquinista y del productor con sellado criptográfico SHA-256 no repudiable para liquidación de campaña.
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[#29381e]">
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-semibold text-[#c8dab8]">Firma Maquinista</span>
+              <div class="flex items-center gap-1">
+                <button type="button" data-action="trace-sig-canvas" data-pad="operator" class="px-2 py-1 min-h-[44px] rounded text-xs font-semibold bg-[#243319] text-[#bef264] hover:bg-[#2f4221]">Trazar</button>
+                <button type="button" data-action="clear-sig-canvas" data-pad="operator" class="px-2 py-1 min-h-[44px] rounded text-xs font-semibold bg-[#202b18] text-[#c8dab8] hover:bg-[#29381e]">Limpiar</button>
+              </div>
+            </div>
+            <canvas id="operatorSigCanvas" width="280" height="84" aria-label="Panel de firma digital del maquinista" class="signature-canvas w-full h-[84px] bg-[#12180e] border border-[#3b5228] rounded-lg"></canvas>
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-semibold text-[#c8dab8]">Firma Productor / Agrónomo</span>
+              <div class="flex items-center gap-1">
+                <button type="button" data-action="trace-sig-canvas" data-pad="producer" class="px-2 py-1 min-h-[44px] rounded text-xs font-semibold bg-[#243319] text-[#bef264] hover:bg-[#2f4221]">Trazar</button>
+                <button type="button" data-action="clear-sig-canvas" data-pad="producer" class="px-2 py-1 min-h-[44px] rounded text-xs font-semibold bg-[#202b18] text-[#c8dab8] hover:bg-[#29381e]">Limpiar</button>
+              </div>
+            </div>
+            <canvas id="producerSigCanvas" width="280" height="84" aria-label="Panel de firma digital del productor" class="signature-canvas w-full h-[84px] bg-[#12180e] border border-[#3b5228] rounded-lg"></canvas>
+          </div>
         </div>
 
-        <div class="flex justify-end gap-3 pt-3 border-t border-[#2c3d20]">
-          <button type="button" data-action="close-modal" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-[#d6e5c9] hover:bg-slate-700">Cancelar</button>
-          <button type="button" data-action="confirm-labor-certification" data-id="${order.id}" class="px-4 py-2 rounded-xl text-xs font-semibold bg-[#65a30d] hover:bg-[#4d7c0f] text-white shadow-lg shadow-none">Firmar y Sellar Acta Digital</button>
+        <p class="text-xs text-[#9eb38c] pt-1">
+          Doble Firma Digital ePOD: Dibuje ambas firmas en los paneles táctiles (o pulse Trazar en cabina) para generar el sello criptográfico SHA-256 verificable.
+        </p>
+
+        <div class="flex flex-wrap justify-end gap-3 pt-3 border-t border-[#29381e]">
+          <button type="button" data-action="close-modal" class="px-4 py-2 min-h-[44px] rounded-lg text-xs font-semibold bg-[#202b18] text-[#c8dab8] hover:bg-[#29381e] border border-[#3b5228]">Cancelar</button>
+          <button type="submit" class="px-4 py-2 min-h-[44px] rounded-lg text-xs font-bold bg-[#84cc16] hover:bg-[#a3e635] text-[#0f1709]">Firmar y Sellar Acta Digital</button>
         </div>
-      </div>
+      </form>
     `;
 
     Sanitizer.safeSetInnerHTML(body, html);
     modal.classList.remove('hidden');
+
+    this.initSignaturePad('operatorSigCanvas', 'operator', '#bef264');
+    this.initSignaturePad('producerSigCanvas', 'producer', '#a3e635');
+    this.traceAssistedSignature('operator');
+    this.traceAssistedSignature('producer');
   }
 
   handleConfirmCertification(orderId) {
@@ -500,20 +812,29 @@ export class AgroTrackApp {
       return;
     }
 
+    const operatorSignature = this.serializeSignaturePad('operator');
+    const producerSignature = this.serializeSignaturePad('producer');
+
+    if (!operatorSignature || !producerSignature) {
+      this.showToast('Dibuje o trace ambas firmas digitales (Maquinista y Productor) antes de sellar el acta', 'warning');
+      return;
+    }
+
     try {
       const completed = this.laborService.completeLaborOrder({
         orderId,
         hectaresApplied: ha,
         fuelUsedLiters: fuel,
-        operatorSignature: 'data:image/svg+xml;utf8,<svg><path d="M10,20 L80,50 L150,30" stroke="green"/></svg>',
-        producerSignature: 'data:image/svg+xml;utf8,<svg><path d="M5,10 L90,60 L200,40" stroke="blue"/></svg>',
+        operatorSignature,
+        producerSignature,
         signerName,
         signerRole,
         notes
       });
 
+      this.persistState();
       this.closeModal();
-      this.showToast(`✅ Acta Digital ${completed.id} firmada y sellada con SHA-256: ${completed.hashSeal.slice(0, 10)}... (${formatHectares(ha)})`, 'success');
+      this.showToast(`Acta Digital ${completed.id} sellada con SHA-256: ${completed.hashSeal.slice(0, 10)}... (${formatHectares(ha)})`, 'success');
       this.render();
     } catch (e) {
       this.showToast(e.message, 'error');
@@ -528,31 +849,34 @@ export class AgroTrackApp {
     title.textContent = 'Registrar Nuevo Lote Agrícola';
 
     const producers = this.fieldRegistry.listProducers();
-    const prodOptions = producers.map(p => `<option value="${p.id}">${Sanitizer.escapeHTML(p.name)}</option>`).join('');
+    const hasProducers = producers.length > 0;
+    const prodOptions = hasProducers
+      ? producers.map(p => `<option value="${p.id}">${Sanitizer.escapeHTML(p.name)}</option>`).join('')
+      : '<option value="PROD-GENERAL">Productor General (Nuevo)</option>';
 
     const html = `
-      <form id="newLotForm" class="space-y-3">
-        <div class="grid grid-cols-2 gap-3">
+      <form id="newLotForm" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Nombre del Lote</label>
-            <input type="text" id="nlotName" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200" placeholder="Ej: Lote 05 - La Rinconada" required />
+            <label for="nlotName" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Nombre del Lote</label>
+            <input type="text" id="nlotName" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]" placeholder="Ej: Lote 05 - La Rinconada" required />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Establecimiento / Campo</label>
-            <input type="text" id="nlotEstablishment" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200" placeholder="Ej: Campo Los Ceibos" required />
+            <label for="nlotEstablishment" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Establecimiento / Campo</label>
+            <input type="text" id="nlotEstablishment" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]" placeholder="Ej: Campo Los Ceibos" required />
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Productor / Cliente</label>
-            <select id="nlotProducer" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200">
+            <label for="nlotProducer" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Productor / Cliente</label>
+            <select id="nlotProducer" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]">
               ${prodOptions}
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Cultivo Actual</label>
-            <select id="nlotCrop" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200">
+            <label for="nlotCrop" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Cultivo Actual</label>
+            <select id="nlotCrop" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]">
               <option value="Soja de Primera">Soja de Primera</option>
               <option value="Maíz Tardío">Maíz Tardío</option>
               <option value="Trigo">Trigo</option>
@@ -562,25 +886,25 @@ export class AgroTrackApp {
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Hectáreas Brutas (Catastro)</label>
-            <input type="number" step="0.1" id="nlotGrossHa" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200" placeholder="Ej: 150.0" required />
+            <label for="nlotGrossHa" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Hectáreas Brutas (Catastro)</label>
+            <input type="number" step="0.1" min="0.1" id="nlotGrossHa" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed] tabular-nums" placeholder="Ej: 150.0" required />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Hectáreas Netas (Productivas)</label>
-            <input type="number" step="0.1" id="nlotNetHa" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200 font-bold" placeholder="Ej: 142.5" required />
+            <label for="nlotNetHa" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Hectáreas Netas (Productivas)</label>
+            <input type="number" step="0.1" min="0.1" id="nlotNetHa" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed] font-bold tabular-nums" placeholder="Ej: 142.5" required />
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Distancia a Zona Sensible / Escuela (Metros)</label>
-          <input type="number" id="nlotBuffer" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200" value="500" />
+          <label for="nlotBuffer" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Distancia a Zona Sensible / Escuela (Metros)</label>
+          <input type="number" min="0" id="nlotBuffer" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed] tabular-nums" value="500" />
         </div>
 
-        <div class="flex justify-end gap-3 pt-3 border-t border-[#2c3d20]">
-          <button type="button" data-action="close-modal" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-[#d6e5c9] hover:bg-slate-700">Cancelar</button>
-          <button type="button" data-action="register-lot" class="px-4 py-2 rounded-xl text-xs font-semibold bg-[#65a30d] hover:bg-[#4d7c0f] text-white shadow-lg shadow-none">Guardar Lote</button>
+        <div class="flex flex-wrap justify-end gap-3 pt-3 border-t border-[#29381e]">
+          <button type="button" data-action="close-modal" class="px-4 py-2 min-h-[44px] rounded-lg text-xs font-semibold bg-[#202b18] text-[#c8dab8] hover:bg-[#29381e] border border-[#3b5228]">Cancelar</button>
+          <button type="submit" class="px-4 py-2 min-h-[44px] rounded-lg text-xs font-bold bg-[#84cc16] hover:bg-[#a3e635] text-[#0f1709]">Guardar Lote</button>
         </div>
       </form>
     `;
@@ -603,21 +927,28 @@ export class AgroTrackApp {
       return;
     }
 
-    const producer = this.fieldRegistry.getProducer(producerId);
+    let producer = this.fieldRegistry.getProducer(producerId);
+    if (!producer) {
+      producer = this.fieldRegistry.registerProducer({
+        id: 'PROD-GENERAL',
+        name: 'Productor Agropecuario Registrado'
+      });
+    }
 
     try {
       const lot = this.fieldRegistry.registerLot({
         lotName,
         establishmentName,
-        producerId,
-        producerName: producer ? producer.name : 'Productor',
-        producerPhone: producer ? producer.contactPhone : '',
+        producerId: producer.id,
+        producerName: producer.name,
+        producerPhone: producer.contactPhone || '',
         currentCrop,
         hectaresGross: grossHa,
         hectaresNet: netHa,
         bufferZoneMeters
       });
 
+      this.persistState();
       this.closeModal();
       this.showToast(`Lote ${lot.lotName} registrado (${formatHectares(lot.hectaresNet)} netas)`, 'success');
       this.render();
@@ -626,10 +957,25 @@ export class AgroTrackApp {
     }
   }
 
+  renderDeltaTResultMarkup(evaluation) {
+    return `
+      <div class="p-4 rounded-xl border ${evaluation.badgeClass} space-y-2">
+        <div class="flex flex-wrap justify-between items-center gap-2">
+          <span class="text-sm font-extrabold uppercase tracking-wide">${Sanitizer.escapeHTML(evaluation.label)}</span>
+          <span class="text-2xl font-black font-mono tabular-nums">ΔT = ${evaluation.deltaT}°C</span>
+        </div>
+        <p class="text-xs leading-relaxed">${Sanitizer.escapeHTML(evaluation.message)}</p>
+        <div class="text-xs font-mono pt-2 border-t border-current/20 tabular-nums">
+          Temp: ${evaluation.temperatureC}°C | Humedad: ${evaluation.relativeHumidityPct}% | Viento: ${evaluation.windSpeedKmH} km/h | Pulverización: ${evaluation.isSprayPermitted ? 'PERMITIDA' : 'BLOQUEADA'}
+        </div>
+      </div>
+    `;
+  }
+
   handleCalculateDeltaTLive() {
-    const temp = Number(document.getElementById('liveTempInput')?.value) || 24;
-    const rh = Number(document.getElementById('liveRhInput')?.value) || 60;
-    const wind = Number(document.getElementById('liveWindInput')?.value) || 10;
+    const temp = Number(document.getElementById('liveTempInput')?.value) || 23.5;
+    const rh = Number(document.getElementById('liveRhInput')?.value) || 62;
+    const wind = Number(document.getElementById('liveWindInput')?.value) || 9.5;
 
     const evaluation = DeltaTSentinel.evaluateSprayConditions({
       temperatureC: temp,
@@ -639,25 +985,18 @@ export class AgroTrackApp {
 
     const displayContainer = document.getElementById('liveDeltaTResult');
     if (displayContainer) {
-      const html = `
-        <div class="p-4 rounded-xl border ${evaluation.badgeClass} space-y-2">
-          <div class="flex justify-between items-center">
-            <span class="text-sm font-extrabold uppercase tracking-wide">${evaluation.label}</span>
-            <span class="text-2xl font-black font-mono">ΔT = ${evaluation.deltaT}°C</span>
-          </div>
-          <p class="text-xs leading-relaxed opacity-90">${evaluation.message}</p>
-          <div class="text-[10px] text-[#9eb38c] font-mono pt-1 border-t border-[#384e29]/50">
-            Temp: ${temp}°C · Humedad: ${rh}% · Viento: ${wind} km/h · Pulverización: ${evaluation.isSprayPermitted ? 'PERMITIDA' : 'BLOQUEADA'}
-          </div>
-        </div>
-      `;
-      Sanitizer.safeSetInnerHTML(displayContainer, html);
+      Sanitizer.safeSetInnerHTML(displayContainer, this.renderDeltaTResultMarkup(evaluation));
     }
   }
 
   handleGenerateSettlement() {
-    const prodName = document.getElementById('settlementProducerSelect')?.value || 'Agropecuaria del Litoral S.A.';
+    const prodName = document.getElementById('settlementProducerSelect')?.value;
     const campaign = document.getElementById('settlementCampaignInput')?.value || 'Campaña Gruesa 2026/2027';
+
+    if (!prodName) {
+      this.showToast('Seleccione un productor con órdenes certificadas', 'warning');
+      return;
+    }
 
     try {
       const set = this.settlementService.generateCampaignSettlement({
@@ -665,6 +1004,7 @@ export class AgroTrackApp {
         campaignTitle: campaign
       });
 
+      this.persistState();
       this.showToast(`Liquidación ${set.id} generada. Total: ${formatUSD(set.totalAmountUSD)} (${formatHectares(set.totalHectares)})`, 'success');
       this.render();
     } catch (e) {
@@ -713,11 +1053,46 @@ export class AgroTrackApp {
     this.updateWakeLockButton();
   }
 
+  renderDemoBanner() {
+    const isDemoActive = this.hasDemoRecords();
+    const isPurged = this.cache.isPurged();
+
+    if (isDemoActive) {
+      return `
+        <div class="bg-[#2e2611] border border-[#856404] rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 no-print">
+          <div class="flex items-center gap-2.5 text-xs text-[#fde68a]">
+            <span class="px-2 py-0.5 rounded font-bold bg-[#451a03] border border-[#b45309]">[DEMO]</span>
+            <span>Datos de demostración precargados para inspección de lotes, flota y orden ePOD.</span>
+          </div>
+          <button type="button" data-action="purge-demo-data" class="px-3.5 py-2 min-h-[44px] rounded-lg bg-[#172012] hover:bg-[#243319] text-[#fde68a] border border-[#856404] font-semibold text-xs flex items-center gap-1.5 whitespace-nowrap shrink-0">
+            ${ICONS.trash}
+            <span>Purgar Datos Demo</span>
+          </button>
+        </div>
+      `;
+    }
+
+    if (isPurged) {
+      return `
+        <div class="bg-[#172012] border border-[#29381e] rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 no-print">
+          <div class="text-xs text-[#c8dab8]">
+            Entorno operativo limpio (datos de demostración purgados). Puede registrar lotes propios o restaurar el set de prueba.
+          </div>
+          <button type="button" data-action="restore-demo-data" class="px-3.5 py-2 min-h-[44px] rounded-lg bg-[#243319] hover:bg-[#2f4221] text-[#bef264] border border-[#3b5228] font-semibold text-xs whitespace-nowrap shrink-0">
+            Restaurar Datos Demo
+          </button>
+        </div>
+      `;
+    }
+
+    return '';
+  }
+
   renderDashboard(container) {
     const orders = this.laborService.listLaborOrders();
     const completedOrders = orders.filter(o => o.status === 'completed');
-    const lots = this.fieldRegistry.listLots();
     const machines = this.machineryCatalog.listMachinery();
+    const hasDemo = this.hasDemoRecords();
 
     const totalHa = completedOrders.reduce((sum, o) => sum + (o.hectaresApplied || 0), 0);
     const totalUSD = completedOrders.reduce((sum, o) => sum + (o.totalAmountUSD || 0), 0);
@@ -725,90 +1100,122 @@ export class AgroTrackApp {
 
     const html = `
       <div class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 class="text-xl font-bold text-[#f2f7ed]">Panel General de Operaciones Agrícolas</h2>
+            <p class="text-xs text-[#9eb38c]">Monitoreo de superficie neta trabajada, consumo de gasoil y actas digitales ePOD.</p>
+          </div>
+          ${this.renderDemoBadge(hasDemo)}
+        </div>
+
+        ${this.renderDemoBanner()}
+
         <!-- Top KPI Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div class="bg-[#182113] p-5 rounded-xl border border-[#2c3d20] shadow-xl">
-            <div class="text-xs font-semibold text-[#9eb38c] uppercase tracking-wider">Hectáreas Certificadas</div>
-            <div class="text-3xl font-extrabold text-[#bef264] mt-2">${formatHectares(totalHa)}</div>
-            <div class="text-xs text-[#9eb38c] mt-1">${completedOrders.length} labores firmadas ePOD</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-[#172012] p-5 rounded-xl border border-[#29381e]">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-semibold text-[#9eb38c] uppercase tracking-wider">Hectáreas Certificadas</span>
+              ${this.renderDemoBadge(hasDemo)}
+            </div>
+            <div class="text-2xl font-extrabold text-[#bef264] mt-2 tabular-nums">${formatHectares(totalHa)}</div>
+            <div class="text-xs text-[#c8dab8] mt-1">${completedOrders.length} labores firmadas ePOD</div>
           </div>
 
-          <div class="bg-[#182113] p-5 rounded-xl border border-[#2c3d20] shadow-xl">
-            <div class="text-xs font-semibold text-[#9eb38c] uppercase tracking-wider">Facturación Campaña</div>
-            <div class="text-3xl font-extrabold text-white mt-2">${formatUSD(totalUSD)}</div>
-            <div class="text-xs text-indigo-400 mt-1">Cero Disputas de Superficie</div>
+          <div class="bg-[#172012] p-5 rounded-xl border border-[#29381e]">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-semibold text-[#9eb38c] uppercase tracking-wider">Facturación Campaña</span>
+              ${this.renderDemoBadge(hasDemo)}
+            </div>
+            <div class="text-2xl font-extrabold text-[#f2f7ed] mt-2 tabular-nums">${formatUSD(totalUSD)}</div>
+            <div class="text-xs text-[#bef264] mt-1">Superficie neta conciliada</div>
           </div>
 
-          <div class="bg-[#182113] p-5 rounded-xl border border-[#2c3d20] shadow-xl">
-            <div class="text-xs font-semibold text-[#9eb38c] uppercase tracking-wider">Flota de Maquinaria</div>
-            <div class="text-3xl font-extrabold text-white mt-2">${machines.length}</div>
-            <div class="text-xs text-[#9eb38c] mt-1">Autopropulsadas & Drones</div>
+          <div class="bg-[#172012] p-5 rounded-xl border border-[#29381e]">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-semibold text-[#9eb38c] uppercase tracking-wider">Flota de Maquinaria</span>
+              ${this.renderDemoBadge(hasDemo)}
+            </div>
+            <div class="text-2xl font-extrabold text-[#f2f7ed] mt-2 tabular-nums">${machines.length}</div>
+            <div class="text-xs text-[#c8dab8] mt-1">Autopropulsadas y Drones</div>
           </div>
 
-          <div class="bg-[#182113] p-5 rounded-xl border border-[#2c3d20] shadow-xl">
-            <div class="text-xs font-semibold text-[#9eb38c] uppercase tracking-wider">Gasoil Consumido</div>
-            <div class="text-3xl font-extrabold text-amber-400 mt-2">${totalFuel} <span class="text-sm font-normal text-[#9eb38c]">lts</span></div>
-            <div class="text-xs text-[#9eb38c] mt-1">Balance de Combustible</div>
+          <div class="bg-[#172012] p-5 rounded-xl border border-[#29381e]">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-semibold text-[#9eb38c] uppercase tracking-wider">Gasoil Consumido</span>
+              ${this.renderDemoBadge(hasDemo)}
+            </div>
+            <div class="text-2xl font-extrabold text-[#fde68a] mt-2 tabular-nums">${totalFuel} <span class="text-xs font-normal text-[#9eb38c]">lts</span></div>
+            <div class="text-xs text-[#c8dab8] mt-1">Balance de Combustible</div>
           </div>
         </div>
 
         <!-- Action Banners -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-[#1b2615] p-5 rounded-xl border border-[#364b24] flex items-center justify-between">
+          <div class="bg-[#172012] p-5 rounded-xl border border-[#3b5228] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 class="text-base font-bold text-white flex items-center gap-2">
-                <span>🚜</span> Nueva Labor Agrícola
+              <h3 class="text-[1.0625rem] font-bold text-[#f2f7ed] flex items-center gap-2">
+                ${ICONS.tractor}
+                <span>Nueva Labor Agrícola</span>
               </h3>
-              <p class="text-xs text-[#d6e5c9] mt-1">Generar orden de pulverización o siembra con Receta Agronómica.</p>
+              <p class="text-xs text-[#c8dab8] mt-1">Generar orden de pulverización o siembra con Receta Agronómica.</p>
             </div>
-            <button data-action="open-new-order-modal" class="px-4 py-2.5 rounded-xl bg-[#65a30d] hover:bg-[#4d7c0f] text-white font-semibold text-xs shadow-lg shadow-none whitespace-nowrap">
-              + Iniciar Labor
+            <button type="button" data-action="open-new-order-modal" class="px-4 py-2.5 min-h-[44px] rounded-lg bg-[#84cc16] hover:bg-[#a3e635] text-[#0f1709] font-bold text-xs flex items-center gap-1.5 whitespace-nowrap shrink-0">
+              ${ICONS.plus}
+              <span>Iniciar Labor</span>
             </button>
           </div>
 
-          <div class="bg-[#19241f] p-5 rounded-xl border border-[#2e4739] flex items-center justify-between">
+          <div class="bg-[#172012] p-5 rounded-xl border border-[#3b5228] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 class="text-base font-bold text-white flex items-center gap-2">
-                <span>🌦️</span> Semáforo Delta T en Lote
+              <h3 class="text-[1.0625rem] font-bold text-[#f2f7ed] flex items-center gap-2">
+                ${ICONS.cloudSun}
+                <span>Semáforo Delta T en Lote</span>
               </h3>
-              <p class="text-xs text-[#d6e5c9] mt-1">Monitoreo psicrométrico de deriva y evaporación antes de aplicar.</p>
+              <p class="text-xs text-[#c8dab8] mt-1">Monitoreo psicrométrico de deriva y evaporación antes de aplicar.</p>
             </div>
-            <button data-tab="weather-deltat" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-lg shadow-none whitespace-nowrap">
-              Ver Clima & ΔT
+            <button type="button" data-tab="weather-deltat" class="px-4 py-2.5 min-h-[44px] rounded-lg bg-[#243319] hover:bg-[#2f4221] text-[#bef264] border border-[#3b5228] font-bold text-xs whitespace-nowrap shrink-0">
+              Evaluar Clima y ΔT
             </button>
           </div>
         </div>
 
         <!-- Recent Certified Labors -->
-        <div class="bg-[#182113] rounded-xl border border-[#2c3d20] p-5 shadow-xl">
-          <h3 class="text-sm font-bold text-white mb-4">Últimas Labores Certificadas en Campo</h3>
+        <div class="bg-[#172012] rounded-xl border border-[#29381e] p-5">
+          <h3 class="text-[1.0625rem] font-bold text-[#f2f7ed] mb-4">Últimas Labores Registradas en Campo</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
-              <thead class="text-[#9eb38c] border-b border-[#2c3d20] uppercase text-[10px] tracking-wider">
+              <thead class="text-[#9eb38c] border-b border-[#29381e] uppercase tracking-wider">
                 <tr>
-                  <th class="pb-3">ID Orden</th>
-                  <th class="pb-3">Lote / Campo</th>
-                  <th class="pb-3">Productor</th>
-                  <th class="pb-3">Labor</th>
-                  <th class="pb-3">Máquina</th>
-                  <th class="pb-3">Superficie</th>
-                  <th class="pb-3">Total USD</th>
+                  <th class="pb-3 pr-3">ID Orden</th>
+                  <th class="pb-3 pr-3">Lote / Campo</th>
+                  <th class="pb-3 pr-3">Productor</th>
+                  <th class="pb-3 pr-3">Labor</th>
+                  <th class="pb-3 pr-3">Máquina</th>
+                  <th class="pb-3 pr-3">Superficie</th>
+                  <th class="pb-3 pr-3">Total USD</th>
                   <th class="pb-3">Sello SHA-256</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-800/60 text-[#d6e5c9]">
-                ${orders.length === 0 ? '<tr><td colspan="8" class="py-4 text-center text-[#7d936c]">No hay órdenes registradas aún</td></tr>' : ''}
-                ${orders.map(o => `
+              <tbody class="divide-y divide-[#29381e] text-[#c8dab8]">
+                ${orders.length === 0 ? `
                   <tr>
-                    <td class="py-3 font-mono font-semibold text-[#bef264]">${o.id}</td>
-                    <td class="py-3 font-medium text-white">${Sanitizer.escapeHTML(o.lotName)} <span class="text-[#7d936c]">(${Sanitizer.escapeHTML(o.establishmentName)})</span></td>
-                    <td class="py-3">${Sanitizer.escapeHTML(o.producerName)}</td>
-                    <td class="py-3"><span class="px-2 py-0.5 rounded-md text-[10px] bg-slate-800 text-[#d6e5c9]">${o.laborType}</span></td>
-                    <td class="py-3 text-[#d6e5c9]">${Sanitizer.escapeHTML(o.machineName)}</td>
-                    <td class="py-3 font-bold text-[#bef264]">${formatHectares(o.hectaresApplied || o.targetHectares)}</td>
-                    <td class="py-3 font-bold text-white">${o.totalAmountUSD ? formatUSD(o.totalAmountUSD) : '-'}</td>
-                    <td class="py-3 font-mono text-[10px] text-[#bef264]" title="${o.hashSeal}">
-                      🔒 ${o.hashSeal ? o.hashSeal.slice(0, 10) + '...' : 'Pendiente Firma'}
+                    <td colspan="8" class="py-6 text-center text-[#9eb38c]">
+                      No hay órdenes de labor registradas. Use el botón "Iniciar Labor" para registrar la primera orden.
+                    </td>
+                  </tr>
+                ` : orders.map(o => `
+                  <tr>
+                    <td class="py-3 pr-3 font-mono font-semibold text-[#bef264] whitespace-nowrap">
+                      ${Sanitizer.escapeHTML(o.id)} ${this.renderDemoBadge(o.isDemo)}
+                    </td>
+                    <td class="py-3 pr-3 font-medium text-[#f2f7ed]">${Sanitizer.escapeHTML(o.lotName)} <span class="text-[#9eb38c]">(${Sanitizer.escapeHTML(o.establishmentName)})</span></td>
+                    <td class="py-3 pr-3">${Sanitizer.escapeHTML(o.producerName)}</td>
+                    <td class="py-3 pr-3"><span class="px-2 py-0.5 rounded text-xs bg-[#243319] text-[#bef264] border border-[#3b5228]">${Sanitizer.escapeHTML(o.laborType)}</span></td>
+                    <td class="py-3 pr-3 text-[#c8dab8]">${Sanitizer.escapeHTML(o.machineName)}</td>
+                    <td class="py-3 pr-3 font-bold text-[#bef264] tabular-nums">${formatHectares(o.hectaresApplied || o.targetHectares)}</td>
+                    <td class="py-3 pr-3 font-bold text-[#f2f7ed] tabular-nums">${o.totalAmountUSD ? formatUSD(o.totalAmountUSD) : '-'}</td>
+                    <td class="py-3 font-mono text-xs text-[#bef264]" title="${o.hashSeal || ''}">
+                      ${o.hashSeal ? `${o.hashSeal.slice(0, 10)}...` : 'Pendiente Firma'}
                     </td>
                   </tr>
                 `).join('')}
@@ -827,94 +1234,117 @@ export class AgroTrackApp {
 
     const html = `
       <div class="space-y-4">
-        <div class="flex justify-between items-center">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 class="text-lg font-bold text-white">Órdenes de Labor & Actas Digitales ePOD</h2>
+            <h2 class="text-xl font-bold text-[#f2f7ed]">Órdenes de Labor y Actas Digitales ePOD</h2>
             <p class="text-xs text-[#9eb38c]">Certificación georreferenciada de hectáreas netas aplicadas con doble firma y receta agronómica.</p>
           </div>
-          <button data-action="open-new-order-modal" class="px-4 py-2 rounded-xl bg-[#65a30d] hover:bg-[#4d7c0f] text-white font-semibold text-xs shadow-lg shadow-none flex items-center gap-1.5">
-            + Nueva Orden de Labor
+          <button type="button" data-action="open-new-order-modal" class="px-4 py-2 min-h-[44px] rounded-lg bg-[#84cc16] hover:bg-[#a3e635] text-[#0f1709] font-bold text-xs flex items-center gap-1.5 whitespace-nowrap shrink-0">
+            ${ICONS.plus}
+            <span>Nueva Orden de Labor</span>
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          ${orders.map(o => `
-            <div class="bg-[#182113] rounded-xl border ${o.status === 'completed' ? 'border-[#2c3d20]' : 'border-emerald-700/60'} p-5 shadow-xl flex flex-col justify-between">
-              <div>
-                <div class="flex justify-between items-start">
-                  <div>
-                    <span class="text-[10px] font-mono text-[#bef264]">${o.id}</span>
-                    <h3 class="text-base font-bold text-white">${Sanitizer.escapeHTML(o.lotName)}</h3>
-                    <div class="text-xs text-[#9eb38c]">${Sanitizer.escapeHTML(o.establishmentName)} · ${Sanitizer.escapeHTML(o.producerName)}</div>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                    o.status === 'completed' ? 'bg-emerald-950 text-[#bef264] border border-emerald-800' : 'bg-amber-950 text-amber-300 border border-amber-800 animate-pulse'
-                  }">
-                    ${o.status === 'completed' ? 'Labor Certificada' : 'En Ejecución / Pendiente'}
-                  </span>
-                </div>
-
-                <div class="mt-4 space-y-2 text-xs">
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Labor / Cultivo:</span>
-                    <span class="font-medium text-white">${Sanitizer.escapeHTML(o.laborType)} (${Sanitizer.escapeHTML(o.crop)})</span>
-                  </div>
-
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Maquinaria:</span>
-                    <span class="font-medium text-slate-200">${Sanitizer.escapeHTML(o.machineName)}</span>
-                  </div>
-
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Maquinista / Aplicador:</span>
-                    <span class="font-medium text-slate-200">${Sanitizer.escapeHTML(o.operatorName)}</span>
-                  </div>
-
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Superficie Certificada:</span>
-                    <span class="font-bold text-[#bef264] text-sm">${formatHectares(o.hectaresApplied || o.targetHectares)}</span>
-                  </div>
-
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Tarifa y Total:</span>
-                    <span class="font-bold text-white">${formatUSD(o.ratePerHaUSD)}/ha → ${o.totalAmountUSD ? formatUSD(o.totalAmountUSD) : 'Por certificar'}</span>
-                  </div>
-
-                  <div class="bg-[#11160e]/60 p-2.5 rounded-xl border border-[#2c3d20] text-[11px] space-y-1">
-                    <div class="text-[#9eb38c]">Receta Agronómica: <span class="font-mono text-indigo-300">${o.recipeAgronomicNumber}</span></div>
-                    <div class="text-[#9eb38c]">Gasoil: <span class="text-amber-300">${o.fuelUsedLiters || 0} lts</span> (${o.fuelProvidedBy === 'contractor' ? 'A cargo contratista' : 'Provisto por productor'})</div>
-                    ${o.hashSeal ? `<div class="font-mono text-[9px] text-[#bef264]">🔒 Sello SHA-256: ${o.hashSeal.slice(0, 16)}...</div>` : ''}
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-4 pt-3 border-t border-[#2c3d20] flex justify-between items-center text-xs">
-                ${o.status !== 'completed' ? `
-                  <button data-action="open-certify-modal" data-id="${o.id}" class="w-full py-2 rounded-xl bg-[#65a30d] hover:bg-[#4d7c0f] text-white font-semibold text-xs shadow-md">
-                    ✍️ Certificar Labor & Firmar ePOD
-                  </button>
-                ` : `
-                  <div class="flex justify-between items-center w-full">
-                    <span class="text-[10px] text-[#7d936c]">Firmado por: ${Sanitizer.escapeHTML(o.signatures?.signerName || 'Productor')}</span>
-                    <a href="${Sanitizer.sanitizeURL(WhatsAppAgroNotifier.generateWorkOrderCertificateUrl({
-                      producerPhone: o.producerPhone,
-                      producerName: o.producerName,
-                      orderId: o.id,
-                      lotName: o.lotName,
-                      establishmentName: o.establishmentName,
-                      laborType: o.laborType,
-                      hectaresApplied: o.hectaresApplied,
-                      machineName: o.machineName,
-                      hashSeal: o.hashSeal
-                    }))}" target="_blank" rel="noopener noreferrer" class="text-[#bef264] hover:underline flex items-center gap-1 font-semibold">
-                      💬 Enviar Acta por WhatsApp
-                    </a>
-                  </div>
-                `}
-              </div>
+        ${orders.length === 0 ? `
+          <div class="bg-[#172012] rounded-xl border border-[#29381e] p-8 text-center space-y-3">
+            <h3 class="text-[1.0625rem] font-bold text-[#f2f7ed]">Sin Órdenes de Labor Activas</h3>
+            <p class="text-xs text-[#9eb38c] max-w-md mx-auto">Aún no se han emitido órdenes de pulverización, siembra o cosecha en esta campaña.</p>
+            <div class="flex flex-wrap justify-center gap-3 pt-2">
+              <button type="button" data-action="open-new-order-modal" class="px-4 py-2 min-h-[44px] rounded-lg bg-[#84cc16] hover:bg-[#a3e635] text-[#0f1709] font-bold text-xs">
+                Crear Primera Orden de Labor
+              </button>
+              <button type="button" data-action="restore-demo-data" class="px-4 py-2 min-h-[44px] rounded-lg bg-[#243319] hover:bg-[#2f4221] text-[#bef264] border border-[#3b5228] font-semibold text-xs">
+                Restaurar Datos Demo
+              </button>
             </div>
-          `).join('')}
-        </div>
+          </div>
+        ` : `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${orders.map(o => `
+              <div class="bg-[#172012] rounded-xl border ${o.status === 'completed' ? 'border-[#29381e]' : 'border-[#3b5228]'} p-5 flex flex-col justify-between">
+                <div>
+                  <div class="flex flex-wrap justify-between items-start gap-2">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono text-[#bef264]">${Sanitizer.escapeHTML(o.id)}</span>
+                        ${this.renderDemoBadge(o.isDemo)}
+                      </div>
+                      <h3 class="text-[1.0625rem] font-bold text-[#f2f7ed] mt-0.5">${Sanitizer.escapeHTML(o.lotName)}</h3>
+                      <div class="text-xs text-[#9eb38c]">${Sanitizer.escapeHTML(o.establishmentName)} | ${Sanitizer.escapeHTML(o.producerName)}</div>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold ${
+                      o.status === 'completed'
+                        ? 'bg-[#052e16] text-[#bbf7d0] border border-[#166534]'
+                        : 'bg-[#451a03] text-[#fde68a] border border-[#b45309]'
+                    }">
+                      ${o.status === 'completed' ? 'Labor Certificada' : 'En Ejecución / Pendiente'}
+                    </span>
+                  </div>
+
+                  <div class="mt-4 space-y-2 text-xs">
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Labor / Cultivo:</span>
+                      <span class="font-medium text-[#f2f7ed]">${Sanitizer.escapeHTML(o.laborType)} (${Sanitizer.escapeHTML(o.crop)})</span>
+                    </div>
+
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Maquinaria:</span>
+                      <span class="font-medium text-[#c8dab8]">${Sanitizer.escapeHTML(o.machineName)}</span>
+                    </div>
+
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Maquinista / Aplicador:</span>
+                      <span class="font-medium text-[#c8dab8]">${Sanitizer.escapeHTML(o.operatorName)}</span>
+                    </div>
+
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Superficie Certificada:</span>
+                      <span class="font-bold text-[#bef264] text-sm tabular-nums">${formatHectares(o.hectaresApplied || o.targetHectares)}</span>
+                    </div>
+
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Tarifa y Total:</span>
+                      <span class="font-bold text-[#f2f7ed] tabular-nums">${formatUSD(o.ratePerHaUSD)}/ha -> ${o.totalAmountUSD ? formatUSD(o.totalAmountUSD) : 'Por certificar'}</span>
+                    </div>
+
+                    <div class="pt-3 mt-3 border-t border-[#29381e] text-xs space-y-1">
+                      <div class="text-[#9eb38c]">Receta Agronómica: <span class="font-mono text-[#bef264]">${Sanitizer.escapeHTML(o.recipeAgronomicNumber)}</span></div>
+                      <div class="text-[#9eb38c]">Gasoil: <span class="text-[#fde68a] font-semibold tabular-nums">${o.fuelUsedLiters || 0} lts</span> (${o.fuelProvidedBy === 'contractor' ? 'A cargo contratista' : 'Provisto por productor'})</div>
+                      ${o.hashSeal ? `<div class="font-mono text-xs text-[#bef264]">Sello SHA-256: ${o.hashSeal.slice(0, 16)}...</div>` : ''}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-[#29381e] flex justify-between items-center text-xs">
+                  ${o.status !== 'completed' ? `
+                    <button type="button" data-action="open-certify-modal" data-id="${o.id}" class="w-full py-2.5 min-h-[44px] rounded-lg bg-[#84cc16] hover:bg-[#a3e635] text-[#0f1709] font-bold text-xs flex items-center justify-center gap-2">
+                      ${ICONS.pen}
+                      <span>Certificar Labor y Firmar ePOD</span>
+                    </button>
+                  ` : `
+                    <div class="flex flex-wrap justify-between items-center gap-2 w-full">
+                      <span class="text-xs text-[#9eb38c]">Firmado por: ${Sanitizer.escapeHTML(o.signatures?.signerName || 'Productor')}</span>
+                      <a href="${Sanitizer.sanitizeURL(WhatsAppAgroNotifier.generateWorkOrderCertificateUrl({
+                        producerPhone: o.producerPhone,
+                        producerName: o.producerName,
+                        orderId: o.id,
+                        lotName: o.lotName,
+                        establishmentName: o.establishmentName,
+                        laborType: o.laborType,
+                        hectaresApplied: o.hectaresApplied,
+                        machineName: o.machineName,
+                        hashSeal: o.hashSeal
+                      }))}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 min-h-[44px] rounded-lg bg-[#243319] hover:bg-[#2f4221] text-[#bef264] border border-[#3b5228] flex items-center gap-1.5 font-semibold">
+                        ${ICONS.share}
+                        <span>Enviar Acta por WhatsApp</span>
+                      </a>
+                    </div>
+                  `}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
       </div>
     `;
 
@@ -922,66 +1352,67 @@ export class AgroTrackApp {
   }
 
   renderWeatherDeltaT(container) {
+    const defaultEvaluation = DeltaTSentinel.evaluateSprayConditions({
+      temperatureC: 23.5,
+      relativeHumidityPct: 62,
+      windSpeedKmH: 9.5
+    });
+
     const html = `
       <div class="max-w-3xl mx-auto space-y-6">
         <div>
-          <h2 class="text-lg font-bold text-white flex items-center gap-2">
-            <span>🌦️</span> Estación Meteorológica en Lote & Semáforo Delta T (ΔT)
+          <h2 class="text-xl font-bold text-[#f2f7ed] flex items-center gap-2">
+            ${ICONS.cloudSun}
+            <span>Estación Meteorológica en Lote y Semáforo Delta T (ΔT)</span>
           </h2>
           <p class="text-xs text-[#9eb38c]">Cálculo psicrométrico automático de evaporación y deriva según temperatura, humedad relativa y velocidad de viento.</p>
         </div>
 
-        <div class="bg-[#182113] border border-[#2c3d20] rounded-3xl p-6 shadow-2xl space-y-5">
-          <h3 class="text-sm font-bold text-white border-b border-[#2c3d20] pb-3">Medición Climática In-Situ (Anemómetro & Termo-Higrómetro)</h3>
+        <div class="bg-[#172012] border border-[#29381e] rounded-xl p-6 space-y-5">
+          <h3 class="text-[1.0625rem] font-bold text-[#f2f7ed] border-b border-[#29381e] pb-3">Medición Climática In-Situ (Anemómetro y Termo-Higrómetro)</h3>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Temperatura de Bulbo Seco (°C)</label>
-              <input type="number" id="liveTempInput" step="0.5" class="w-full bg-[#11160e] border border-[#384e29] rounded-xl px-3 py-2.5 text-base text-white font-bold" value="23.5" />
+              <label for="liveTempInput" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Temperatura Bulbo Seco (°C)</label>
+              <input type="number" id="liveTempInput" step="0.5" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-base text-[#f2f7ed] font-bold tabular-nums" value="23.5" />
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Humedad Relativa (%)</label>
-              <input type="number" id="liveRhInput" class="w-full bg-[#11160e] border border-[#384e29] rounded-xl px-3 py-2.5 text-base text-white font-bold" value="62" />
+              <label for="liveRhInput" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Humedad Relativa (%)</label>
+              <input type="number" id="liveRhInput" min="1" max="100" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-base text-[#f2f7ed] font-bold tabular-nums" value="62" />
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Velocidad del Viento (km/h)</label>
-              <input type="number" id="liveWindInput" step="0.5" class="w-full bg-[#11160e] border border-[#384e29] rounded-xl px-3 py-2.5 text-base text-white font-bold" value="9.5" />
+              <label for="liveWindInput" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Velocidad del Viento (km/h)</label>
+              <input type="number" id="liveWindInput" step="0.5" min="0" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-base text-[#f2f7ed] font-bold tabular-nums" value="9.5" />
             </div>
           </div>
 
-          <button data-action="calculate-deltat-live" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-none">
-            ⚡ Evaluar Condiciones de Pulverización y Delta T
+          <button type="button" data-action="calculate-deltat-live" class="w-full py-3 min-h-[44px] rounded-lg bg-[#84cc16] hover:bg-[#a3e635] text-[#0f1709] font-bold text-sm">
+            Evaluar Condiciones de Pulverización y Delta T
           </button>
+        </div>
 
-          <!-- Result Area -->
-          <div id="liveDeltaTResult" class="pt-2">
-            <div class="p-4 rounded-xl border bg-emerald-950/60 text-[#bef264] border-emerald-700 space-y-2">
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-extrabold uppercase tracking-wide">🟢 VENTANA ÓPTIMA (DELTA T 2-8°C)</span>
-                <span class="text-2xl font-black font-mono">ΔT = 4.8°C</span>
-              </div>
-              <p class="text-xs leading-relaxed opacity-90">Condiciones excelentes. Gotas estables y máxima eficacia biológica sin riesgo de evaporación.</p>
-              <div class="text-[10px] text-[#9eb38c] font-mono pt-1 border-t border-[#384e29]/50">
-                Temp: 23.5°C · Humedad: 62% · Viento: 9.5 km/h · Pulverización: PERMITIDA
-              </div>
-            </div>
-          </div>
+        <!-- Result Area -->
+        <div id="liveDeltaTResult">
+          ${this.renderDeltaTResultMarkup(defaultEvaluation)}
         </div>
 
         <!-- Agronomic Guide -->
-        <div class="bg-[#182113] p-5 rounded-xl border border-[#2c3d20] text-xs space-y-3">
-          <h4 class="font-bold text-white text-sm">Normas Agronómicas para Pulverización Terrestre y con Dron:</h4>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div class="p-3 rounded-xl bg-emerald-950/40 border border-emerald-800 text-emerald-200">
-              <strong>🟢 Delta T entre 2 y 8:</strong> Tamaño de gota ideal. Cobertura uniforme sobre follaje.
+        <div class="bg-[#172012] p-5 rounded-xl border border-[#29381e] text-xs space-y-3">
+          <h3 class="font-bold text-[#f2f7ed] text-[1.0625rem]">Normas Agronómicas para Pulverización Terrestre y con Dron</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-[#29381e]">
+            <div class="space-y-1">
+              <h4 class="font-bold text-[#bbf7d0] text-sm">Delta T entre 2°C y 8°C</h4>
+              <p class="text-[#c8dab8]">Tamaño de gota ideal y evaporación controlada. Cobertura uniforme sobre el follaje.</p>
             </div>
-            <div class="p-3 rounded-xl bg-amber-950/40 border border-amber-800 text-amber-200">
-              <strong>⚠️ Delta T entre 8 y 10:</strong> Usar boquillas con inducción de aire y coadyuvante antideriva.
+            <div class="space-y-1">
+              <h4 class="font-bold text-[#fde68a] text-sm">Delta T entre 8°C y 10°C</h4>
+              <p class="text-[#c8dab8]">Margen crítico. Obligatorio usar boquillas con inducción de aire y coadyuvante antideriva.</p>
             </div>
-            <div class="p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-200">
-              <strong>⛔ Delta T > 10 o Viento > 15 km/h:</strong> Peligro penal de deriva. Prohibido aplicar.
+            <div class="space-y-1">
+              <h4 class="font-bold text-[#fecdd3] text-sm">Delta T > 10°C o Viento > 18 km/h</h4>
+              <p class="text-[#c8dab8]">Peligro severo de deriva fitosanitaria o evaporación de gota. Prohibido aplicar.</p>
             </div>
           </div>
         </div>
@@ -996,66 +1427,85 @@ export class AgroTrackApp {
 
     const html = `
       <div class="space-y-4">
-        <div class="flex justify-between items-center">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 class="text-lg font-bold text-white">Padrón de Campos y Lotes Agrícolas</h2>
+            <h2 class="text-xl font-bold text-[#f2f7ed]">Padrón de Campos y Lotes Agrícolas</h2>
             <p class="text-xs text-[#9eb38c]">Delimitación de hectáreas netas vs brutas (descuento de bajos y lagunas) y zonas de amortiguamiento.</p>
           </div>
-          <button data-action="open-lot-modal" class="px-4 py-2 rounded-xl bg-[#65a30d] hover:bg-[#4d7c0f] text-white font-semibold text-xs shadow-lg shadow-none flex items-center gap-1.5">
-            + Nuevo Lote
+          <button type="button" data-action="open-lot-modal" class="px-4 py-2 min-h-[44px] rounded-lg bg-[#84cc16] hover:bg-[#a3e635] text-[#0f1709] font-bold text-xs flex items-center gap-1.5 whitespace-nowrap shrink-0">
+            ${ICONS.plus}
+            <span>Nuevo Lote</span>
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          ${lots.map(l => `
-            <div class="bg-[#182113] rounded-xl border border-[#2c3d20] p-5 shadow-xl flex flex-col justify-between">
-              <div>
-                <div class="flex justify-between items-start">
-                  <div>
-                    <span class="text-[10px] font-mono text-[#bef264]">${l.id}</span>
-                    <h3 class="text-base font-bold text-white">${Sanitizer.escapeHTML(l.lotName)}</h3>
-                    <div class="text-xs text-[#9eb38c]">${Sanitizer.escapeHTML(l.establishmentName)}</div>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-800 text-[#bef264] border border-[#384e29]">
-                    ${Sanitizer.escapeHTML(l.currentCrop)}
-                  </span>
-                </div>
-
-                <div class="mt-4 space-y-2 text-xs">
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Productor:</span>
-                    <span class="font-medium text-white">${Sanitizer.escapeHTML(l.producerName)}</span>
-                  </div>
-
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Superficie Neta (Trabajo):</span>
-                    <span class="font-bold text-[#bef264] text-sm">${formatHectares(l.hectaresNet)}</span>
-                  </div>
-
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Superficie Bruta (Catastro):</span>
-                    <span class="font-medium text-slate-200">${formatHectares(l.hectaresGross)}</span>
-                  </div>
-
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Descuento Bajos / Lagunas:</span>
-                    <span class="font-medium text-amber-300">-${formatHectares(l.discountedWasteHa)}</span>
-                  </div>
-
-                  <div class="pt-2 border-t border-[#2c3d20] text-[11px] flex justify-between text-[#9eb38c]">
-                    <span>Amortiguamiento Periurbano:</span>
-                    <span class="font-semibold text-slate-200">${l.bufferZoneMeters} metros</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-4 pt-3 border-t border-[#2c3d20] flex justify-between items-center text-xs">
-                <span class="text-[#7d936c]">Coordenadas: ${l.coordinates.lat.toFixed(3)}, ${l.coordinates.lng.toFixed(3)}</span>
-                <span class="text-[#bef264] font-semibold">Activo</span>
-              </div>
+        ${lots.length === 0 ? `
+          <div class="bg-[#172012] rounded-xl border border-[#29381e] p-8 text-center space-y-3">
+            <h3 class="text-[1.0625rem] font-bold text-[#f2f7ed]">Sin Lotes Registrados en el Padrón</h3>
+            <p class="text-xs text-[#9eb38c] max-w-md mx-auto">Registre el primer lote especificando superficie bruta catastral y superficie neta productiva.</p>
+            <div class="flex flex-wrap justify-center gap-3 pt-2">
+              <button type="button" data-action="open-lot-modal" class="px-4 py-2 min-h-[44px] rounded-lg bg-[#84cc16] hover:bg-[#a3e635] text-[#0f1709] font-bold text-xs">
+                Registrar Primer Lote
+              </button>
+              <button type="button" data-action="restore-demo-data" class="px-4 py-2 min-h-[44px] rounded-lg bg-[#243319] hover:bg-[#2f4221] text-[#bef264] border border-[#3b5228] font-semibold text-xs">
+                Restaurar Lotes Demo
+              </button>
             </div>
-          `).join('')}
-        </div>
+          </div>
+        ` : `
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${lots.map(l => `
+              <div class="bg-[#172012] rounded-xl border border-[#29381e] p-5 flex flex-col justify-between">
+                <div>
+                  <div class="flex flex-wrap justify-between items-start gap-2">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono text-[#bef264]">${Sanitizer.escapeHTML(l.id)}</span>
+                        ${this.renderDemoBadge(l.isDemo)}
+                      </div>
+                      <h3 class="text-[1.0625rem] font-bold text-[#f2f7ed] mt-0.5">${Sanitizer.escapeHTML(l.lotName)}</h3>
+                      <div class="text-xs text-[#9eb38c]">${Sanitizer.escapeHTML(l.establishmentName)}</div>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-[#243319] text-[#bef264] border border-[#3b5228]">
+                      ${Sanitizer.escapeHTML(l.currentCrop)}
+                    </span>
+                  </div>
+
+                  <div class="mt-4 space-y-2 text-xs">
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Productor:</span>
+                      <span class="font-medium text-[#f2f7ed]">${Sanitizer.escapeHTML(l.producerName)}</span>
+                    </div>
+
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Superficie Neta (Trabajo):</span>
+                      <span class="font-bold text-[#bef264] text-sm tabular-nums">${formatHectares(l.hectaresNet)}</span>
+                    </div>
+
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Superficie Bruta (Catastro):</span>
+                      <span class="font-medium text-[#c8dab8] tabular-nums">${formatHectares(l.hectaresGross)}</span>
+                    </div>
+
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Descuento Bajos / Lagunas:</span>
+                      <span class="font-medium text-[#fde68a] tabular-nums">-${formatHectares(l.discountedWasteHa)}</span>
+                    </div>
+
+                    <div class="pt-2 border-t border-[#29381e] flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Amortiguamiento Periurbano:</span>
+                      <span class="font-semibold text-[#c8dab8] tabular-nums">${l.bufferZoneMeters} metros</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-[#29381e] flex justify-between items-center text-xs">
+                  <span class="text-[#9eb38c] font-mono tabular-nums">Coord: ${l.coordinates.lat.toFixed(3)}, ${l.coordinates.lng.toFixed(3)}</span>
+                  <span class="text-[#bef264] font-semibold">Activo</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
       </div>
     `;
 
@@ -1068,59 +1518,74 @@ export class AgroTrackApp {
     const html = `
       <div class="space-y-4">
         <div>
-          <h2 class="text-lg font-bold text-white">Flota de Maquinaria Agrícola & Consumo de Gasoil</h2>
+          <h2 class="text-xl font-bold text-[#f2f7ed]">Flota de Maquinaria Agrícola y Consumo de Gasoil</h2>
           <p class="text-xs text-[#9eb38c]">Control de horómetros, botalones de pulverización y consumo de gasoil l/ha para balance de campaña.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          ${machines.map(m => `
-            <div class="bg-[#182113] rounded-xl border border-[#2c3d20] p-5 shadow-xl flex flex-col justify-between">
-              <div>
-                <div class="flex justify-between items-start">
-                  <div>
-                    <span class="text-[10px] font-mono text-[#bef264]">${m.id}</span>
-                    <h3 class="text-base font-bold text-white">${Sanitizer.escapeHTML(m.name)}</h3>
-                    <div class="text-xs text-[#9eb38c]">${Sanitizer.escapeHTML(m.brand)} ${Sanitizer.escapeHTML(m.model)} (${m.year})</div>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950 text-[#bef264] border border-emerald-800">
-                    Operativo
-                  </span>
-                </div>
-
-                <div class="mt-4 space-y-2 text-xs">
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Tipo de Equipo:</span>
-                    <span class="font-medium text-slate-200">${Sanitizer.escapeHTML(m.type)}</span>
-                  </div>
-
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Capacidad de Tanque:</span>
-                    <span class="font-bold text-white">${m.tankCapacityLiters} litros</span>
-                  </div>
-
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Ancho de Labor / Botalón:</span>
-                    <span class="font-medium text-slate-200">${m.boomWidthMeters} metros</span>
+        ${machines.length === 0 ? `
+          <div class="bg-[#172012] rounded-xl border border-[#29381e] p-8 text-center space-y-3">
+            <h3 class="text-[1.0625rem] font-bold text-[#f2f7ed]">Sin Maquinaria Registrada en Flota</h3>
+            <p class="text-xs text-[#9eb38c] max-w-md mx-auto">Restaure los equipos de demostración para visualizar pulverizadoras autopropulsadas y drones agrícolas.</p>
+            <div class="pt-2">
+              <button type="button" data-action="restore-demo-data" class="px-4 py-2 min-h-[44px] rounded-lg bg-[#84cc16] hover:bg-[#a3e635] text-[#0f1709] font-bold text-xs">
+                Restaurar Flota Demo
+              </button>
+            </div>
+          </div>
+        ` : `
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${machines.map(m => `
+              <div class="bg-[#172012] rounded-xl border border-[#29381e] p-5 flex flex-col justify-between">
+                <div>
+                  <div class="flex flex-wrap justify-between items-start gap-2">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono text-[#bef264]">${Sanitizer.escapeHTML(m.id)}</span>
+                        ${this.renderDemoBadge(m.isDemo)}
+                      </div>
+                      <h3 class="text-[1.0625rem] font-bold text-[#f2f7ed] mt-0.5">${Sanitizer.escapeHTML(m.name)}</h3>
+                      <div class="text-xs text-[#9eb38c]">${Sanitizer.escapeHTML(m.brand)} ${Sanitizer.escapeHTML(m.model)} (${m.year})</div>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-[#052e16] text-[#bbf7d0] border border-[#166534]">
+                      Operativo
+                    </span>
                   </div>
 
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Consumo Gasoil Estimado:</span>
-                    <span class="font-bold text-amber-400">${formatLitersPerHa(m.fuelConsumptionLitersPerHa)}</span>
-                  </div>
+                  <div class="mt-4 space-y-2 text-xs">
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Tipo de Equipo:</span>
+                      <span class="font-medium text-[#c8dab8]">${Sanitizer.escapeHTML(m.type)}</span>
+                    </div>
 
-                  <div class="flex justify-between text-[#9eb38c]">
-                    <span>Horómetro de Motor:</span>
-                    <span class="font-medium text-slate-200">${m.engineHours} horas</span>
-                  </div>
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Capacidad de Tanque:</span>
+                      <span class="font-bold text-[#f2f7ed] tabular-nums">${m.tankCapacityLiters} litros</span>
+                    </div>
 
-                  <div class="pt-2 border-t border-[#2c3d20] text-[11px] text-[#9eb38c]">
-                    <span>Maquinista habitual:</span> <strong class="text-indigo-300">${Sanitizer.escapeHTML(m.assignedOperator)}</strong>
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Ancho de Labor / Botalón:</span>
+                      <span class="font-medium text-[#c8dab8] tabular-nums">${m.boomWidthMeters} metros</span>
+                    </div>
+
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Consumo Gasoil Estimado:</span>
+                      <span class="font-bold text-[#fde68a] tabular-nums">${formatLitersPerHa(m.fuelConsumptionLitersPerHa)}</span>
+                    </div>
+
+                    <div class="flex justify-between gap-2 text-[#9eb38c]">
+                      <span>Horómetro de Motor:</span>
+                      <span class="font-medium text-[#c8dab8] tabular-nums">${m.engineHours} horas</span>
+                    </div>
+
+                    <div class="pt-2 border-t border-[#29381e] text-xs text-[#9eb38c]">
+                      <span>Maquinista asignado:</span> <strong class="text-[#bef264]">${Sanitizer.escapeHTML(m.assignedOperator)}</strong>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          `).join('')}
-        </div>
+            `).join('')}
+          </div>
+        `}
       </div>
     `;
 
@@ -1130,73 +1595,87 @@ export class AgroTrackApp {
   renderSettlement(container) {
     const settlements = this.settlementService.listSettlements();
     const producers = this.fieldRegistry.listProducers();
+    const hasProducers = producers.length > 0;
 
     const html = `
       <div class="space-y-6">
         <div>
-          <h2 class="text-lg font-bold text-white">Liquidación de Campaña Cero Disputas</h2>
+          <h2 class="text-xl font-bold text-[#f2f7ed]">Liquidación de Campaña Cero Disputas</h2>
           <p class="text-xs text-[#9eb38c]">Generación de liquidaciones de labores en USD/ha y ARS/ha con balance de combustible y conciliación de hectáreas.</p>
         </div>
 
         <!-- Generator -->
-        <div class="bg-[#182113] rounded-xl border border-[#2c3d20] p-5 shadow-xl space-y-4">
-          <h3 class="text-sm font-bold text-white border-b border-[#2c3d20] pb-3">Generar Liquidación de Campaña</h3>
+        <div class="bg-[#172012] rounded-xl border border-[#29381e] p-5 space-y-4">
+          <h3 class="text-[1.0625rem] font-bold text-[#f2f7ed] border-b border-[#29381e] pb-3">Generar Liquidación de Campaña</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Productor / Cliente</label>
-              <select id="settlementProducerSelect" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200">
-                ${producers.map(p => `<option value="${p.name}">${Sanitizer.escapeHTML(p.name)}</option>`).join('')}
+              <label for="settlementProducerSelect" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Productor / Cliente</label>
+              <select id="settlementProducerSelect" ${!hasProducers ? 'disabled' : ''} class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]">
+                ${hasProducers
+                  ? producers.map(p => `<option value="${Sanitizer.escapeHTML(p.name)}">${Sanitizer.escapeHTML(p.name)}</option>`).join('')
+                  : '<option value="">Sin productores registrados</option>'
+                }
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-[#9eb38c] mb-1">Título de Campaña</label>
-              <input type="text" id="settlementCampaignInput" class="w-full bg-[#182113] border border-[#384e29] rounded-xl px-3 py-2 text-sm text-slate-200" value="Campaña Gruesa 2026/2027" />
+              <label for="settlementCampaignInput" class="block text-xs font-semibold text-[#c8dab8] mb-1.5">Título de Campaña</label>
+              <input type="text" id="settlementCampaignInput" class="w-full bg-[#12180e] border border-[#3b5228] rounded-lg px-3 py-2.5 text-sm text-[#f2f7ed]" value="Campaña Gruesa 2026/2027" />
             </div>
             <div class="flex items-end">
-              <button data-action="generate-settlement" class="w-full py-2.5 rounded-xl bg-[#65a30d] hover:bg-[#4d7c0f] text-white font-semibold text-xs shadow-lg shadow-none">
-                ⚡ Generar y Auditar Liquidación
+              <button type="button" data-action="generate-settlement" ${!hasProducers ? 'disabled' : ''} class="w-full py-2.5 min-h-[44px] rounded-lg bg-[#84cc16] hover:bg-[#a3e635] text-[#0f1709] font-bold text-xs disabled:opacity-50">
+                Generar y Auditar Liquidación
               </button>
             </div>
           </div>
         </div>
 
         <!-- Settlements Table -->
-        <div class="bg-[#182113] rounded-xl border border-[#2c3d20] p-5 shadow-xl space-y-4">
-          <h3 class="text-sm font-bold text-white">Liquidaciones Auditadas con Doble Firma ePOD</h3>
+        <div class="bg-[#172012] rounded-xl border border-[#29381e] p-5 space-y-4">
+          <h3 class="text-[1.0625rem] font-bold text-[#f2f7ed]">Liquidaciones Auditadas con Doble Firma ePOD</h3>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
-              <thead class="text-[#9eb38c] border-b border-[#2c3d20] uppercase text-[10px] tracking-wider">
+              <thead class="text-[#9eb38c] border-b border-[#29381e] uppercase tracking-wider">
                 <tr>
-                  <th class="pb-3">ID Liquidación</th>
-                  <th class="pb-3">Productor</th>
-                  <th class="pb-3">Campaña</th>
-                  <th class="pb-3">Labores</th>
-                  <th class="pb-3">Hectáreas</th>
-                  <th class="pb-3">Total USD</th>
-                  <th class="pb-3">Gasoil</th>
-                  <th class="pb-3">Estado Auditoría</th>
+                  <th class="pb-3 pr-3">ID Liquidación</th>
+                  <th class="pb-3 pr-3">Productor</th>
+                  <th class="pb-3 pr-3">Campaña</th>
+                  <th class="pb-3 pr-3">Labores</th>
+                  <th class="pb-3 pr-3">Hectáreas</th>
+                  <th class="pb-3 pr-3">Total USD</th>
+                  <th class="pb-3 pr-3">Gasoil</th>
+                  <th class="pb-3 pr-3">Estado Auditoría</th>
                   <th class="pb-3 text-right">Acción</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-800/60 text-[#d6e5c9]">
-                ${settlements.length === 0 ? '<tr><td colspan="9" class="py-4 text-center text-[#7d936c]">No hay liquidaciones generadas aún</td></tr>' : ''}
-                ${settlements.map(s => `
+              <tbody class="divide-y divide-[#29381e] text-[#c8dab8]">
+                ${settlements.length === 0 ? `
                   <tr>
-                    <td class="py-3 font-mono font-semibold text-[#bef264]">${s.id}</td>
-                    <td class="py-3 font-medium text-white">${Sanitizer.escapeHTML(s.producerName)}</td>
-                    <td class="py-3 text-[#d6e5c9]">${Sanitizer.escapeHTML(s.campaignTitle)}</td>
-                    <td class="py-3 font-bold">${s.totalOrders}</td>
-                    <td class="py-3 font-bold text-[#bef264]">${formatHectares(s.totalHectares)}</td>
-                    <td class="py-3 font-extrabold text-white">${formatUSD(s.totalAmountUSD)}</td>
-                    <td class="py-3 text-amber-300">${s.totalFuelUsedLiters} lts</td>
-                    <td class="py-3">
-                      <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${s.auditStatus === 'audited_zero_disputes' ? 'bg-emerald-950 text-[#bef264] border border-emerald-800' : 'bg-amber-950 text-amber-300 border border-amber-800'}">
+                    <td colspan="9" class="py-6 text-center text-[#9eb38c]">
+                      No hay liquidaciones generadas aún. Seleccione un productor con labores certificadas y pulse "Generar y Auditar Liquidación".
+                    </td>
+                  </tr>
+                ` : settlements.map(s => `
+                  <tr>
+                    <td class="py-3 pr-3 font-mono font-semibold text-[#bef264]">${Sanitizer.escapeHTML(s.id)}</td>
+                    <td class="py-3 pr-3 font-medium text-[#f2f7ed]">${Sanitizer.escapeHTML(s.producerName)}</td>
+                    <td class="py-3 pr-3 text-[#c8dab8]">${Sanitizer.escapeHTML(s.campaignTitle)}</td>
+                    <td class="py-3 pr-3 font-bold tabular-nums">${s.totalOrders}</td>
+                    <td class="py-3 pr-3 font-bold text-[#bef264] tabular-nums">${formatHectares(s.totalHectares)}</td>
+                    <td class="py-3 pr-3 font-extrabold text-[#f2f7ed] tabular-nums">${formatUSD(s.totalAmountUSD)}</td>
+                    <td class="py-3 pr-3 text-[#fde68a] tabular-nums">${s.totalFuelUsedLiters} lts</td>
+                    <td class="py-3 pr-3">
+                      <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        s.auditStatus === 'audited_zero_disputes'
+                          ? 'bg-[#052e16] text-[#bbf7d0] border border-[#166534]'
+                          : 'bg-[#451a03] text-[#fde68a] border border-[#b45309]'
+                      }">
                         ${s.auditStatus === 'audited_zero_disputes' ? 'Cero Disputas Certificado' : 'Requiere Revisión'}
                       </span>
                     </td>
                     <td class="py-3 text-right">
-                      <button data-action="export-settlement-csv" data-id="${s.id}" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-[#384e29] font-semibold text-xs flex items-center gap-1 ml-auto">
-                        📥 Exportar CSV Excel
+                      <button type="button" data-action="export-settlement-csv" data-id="${s.id}" class="px-3 py-2 min-h-[44px] rounded-lg bg-[#243319] hover:bg-[#2f4221] text-[#bef264] border border-[#3b5228] font-semibold text-xs inline-flex items-center gap-1.5 ml-auto">
+                        ${ICONS.download}
+                        <span>Exportar CSV Excel</span>
                       </button>
                     </td>
                   </tr>
@@ -1212,7 +1691,6 @@ export class AgroTrackApp {
   }
 }
 
-// Instantiate on DOM load
 if (typeof window !== 'undefined') {
   window.addEventListener('DOMContentLoaded', () => {
     window.app = new AgroTrackApp();

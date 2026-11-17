@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background-color: #11160e;
+    color: #f2f7ed;
+  }
+
+  body {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    background-color: #11160e;
+    color: #f2f7ed;
+    caret-color: #bef264;
+  }
+
+  button,
+  select,
+  input,
+  textarea,
+  a {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 2px solid #bef264;
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: #84cc16;
+    color: #0f1709;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.signature-canvas {
+  touch-action: none;
+  cursor: crosshair;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  html,
+  body,
+  main,
+  #mainView,
+  #mainView div,
+  #mainView section,
+  #mainView table,
+  #mainView th,
+  #mainView td {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    border-color: #d1d5db !important;
+    box-shadow: none !important;
+  }
+}

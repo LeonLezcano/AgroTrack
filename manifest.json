@@ -1,0 +1,20 @@
+{
+  "name": "AgroTrack | Contratistas Rurales y Pulverización",
+  "short_name": "AgroTrack",
+  "description": "Plataforma offline-first para contratistas rurales, órdenes de labor ePOD con firma digital, semáforo Delta T y liquidación de campaña.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#11160e",
+  "theme_color": "#172012",
+  "lang": "es-AR",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

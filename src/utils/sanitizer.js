@@ -41,18 +41,18 @@ export class Sanitizer {
       'DIV', 'SPAN', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
       'UL', 'OL', 'LI', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD',
       'STRONG', 'B', 'EM', 'I', 'U', 'SMALL', 'BADGE', 'BUTTON', 'A', 'IMG',
-      'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'NAV', 'MAIN',
-      'LABEL', 'INPUT', 'SELECT', 'OPTION', 'TEXTAREA', 'FORM',
+      'SECTION', 'ARTICLE', 'HEADER', 'FOOTER', 'NAV', 'MAIN', 'DL', 'DT', 'DD',
+      'LABEL', 'INPUT', 'SELECT', 'OPTION', 'TEXTAREA', 'FORM', 'CANVAS',
       'SVG', 'PATH', 'CIRCLE', 'RECT', 'LINE', 'POLYLINE', 'POLYGON', 'G'
     ]);
 
     const allowedAttrs = new Set([
-      'class', 'id', 'name', 'type', 'value', 'placeholder', 'data-id',
-      'data-action', 'data-tab', 'data-lot', 'data-machine', 'data-deltat',
-      'disabled', 'checked', 'selected', 'rows', 'cols', 'href', 'title', 'aria-label',
-      'role', 'd', 'fill', 'stroke', 'stroke-width', 'viewBox', 'xmlns', 'src', 'alt',
-      'target', 'rel', 'step', 'max', 'min',
-      'cx', 'cy', 'r', 'x', 'y', 'width', 'height', 'style'
+      'class', 'id', 'name', 'type', 'value', 'placeholder', 'for', 'tabindex',
+      'required', 'disabled', 'checked', 'selected', 'rows', 'cols', 'href', 'title',
+      'role', 'd', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin',
+      'viewBox', 'viewbox', 'xmlns', 'src', 'alt', 'target', 'rel', 'step', 'max', 'min',
+      'cx', 'cy', 'r', 'x', 'y', 'x1', 'x2', 'y1', 'y2', 'points', 'rx', 'ry',
+      'width', 'height', 'style'
     ]);
 
     function cleanNode(node) {
@@ -78,8 +78,9 @@ export class Sanitizer {
         if (attrName.startsWith('on') || attrName === 'formaction') continue;
         if ((attrName === 'href' || attrName === 'src') && attr.value.trim().toLowerCase().startsWith('javascript:')) continue;
 
-        if (allowedAttrs.has(attrName) || attrName.startsWith('data-')) {
-          cleanEl.setAttribute(attrName, attr.value);
+        if (allowedAttrs.has(attrName) || attrName.startsWith('data-') || attrName.startsWith('aria-')) {
+          const finalName = attr.name === 'viewBox' ? 'viewBox' : attrName;
+          cleanEl.setAttribute(finalName, attr.value);
         }
       }
 

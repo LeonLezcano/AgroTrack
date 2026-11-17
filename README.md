@@ -1,7 +1,17 @@
-# 🚜 AgroTrack — Plataforma Operativa & Cero Disputas para Contratistas Rurales y Agro-Servicios
+# 🚜 AgroTrack | Plataforma Operativa y Cero Disputas para Contratistas Rurales y Agro-Servicios
 
-> **AiAppFactory Standard · Versión v1.0.00**  
+> **AiAppFactory Standard · Versión v1.0.02**  
 > *Gestión de Labores de Campo, Pulverización Terrestre/Aérea/Dron, Semáforo Meteorológico Delta T y Liquidación Transparente de Campañas.*
+
+---
+
+## 🛠️ Novedades v1.0.02 (Remediación Integral UX/UI, Accesibilidad y Offline-First)
+
+- **Sistema de Diseño de Cabina (`DESIGN.md`):** Paleta oscura de alto contraste oliva/lima (`#11160e` / `#172012` / `#84cc16` con texto `#0f1709`, relación 9.8:1 AAA) optimizada para tablets de cabina y smartphones en campo, sin clases residuales `slate`/`indigo`/`blue`.
+- **Tailwind CSS Compilado Localmente y PWA 100% Offline-First:** Eliminación del CDN en tiempo de ejecución (`cdn.tailwindcss.com`), hoja compilada `./styles.css`, `manifest.json` dedicado, registro modular `./src/sw-register.js`, y `sw.js` (`agrotrack-cache-v1.0.02`) con estrategia híbrida y precaché real de módulos.
+- **Doble Firma Digital ePOD en HTML5 `<canvas>`:** Paneles táctiles interactivos para firma del maquinista y del productor/agrónomo con serialización vectorial y sellado criptográfico SHA-256.
+- **Transparencia de Datos Demo y Persistencia Local:** Etiquetado explícito `[DEMO]` en lotes, maquinaria y órdenes precargadas, controles de purga (`Purgar Datos Demo`) y restauración en interfaz, y persistencia conectada a `AgroTrackCache.saveState()` / `loadState()`.
+- **Accesibilidad WCAG 2.1 AA y Teclado:** Áreas táctiles mínimas de `44x44px`, cierre de modales con `Escape` y clic en fondo, atributos `role="dialog" aria-modal="true"`, pestañas con `role="tablist"` / `role="tab"` / `aria-selected`, asociaciones `<label for="...">` en todos los formularios, `:focus-visible` de alto contraste, `@media (prefers-reduced-motion: reduce)` y `@media print`.
 
 ---
 
